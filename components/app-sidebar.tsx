@@ -37,40 +37,39 @@ import {
 import { logout } from "@/app/login/actions"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-
 const items = [
     {
-        title: "Dashboard",
+        title: "لوحة التحكم",
         url: "/",
         icon: Home,
     },
     {
-        title: "New Order",
+        title: "طلب جديد",
         url: "/orders/new",
         icon: PlusCircle,
     },
     {
-        title: "Orders",
+        title: "الطلبات",
         url: "/orders",
         icon: SquareTerminal,
     },
     {
-        title: "Inventory",
+        title: "المخزون",
         url: "/inventory",
         icon: Package,
     },
     {
-        title: "Customers",
+        title: "العملاء",
         url: "/customers",
         icon: Users,
     },
     {
-        title: "Expenses",
+        title: "المصروفات",
         url: "/expenses",
         icon: DollarSign,
     },
     {
-        title: "Settings",
+        title: "الإعدادات",
         url: "/settings",
         icon: Settings,
     },
@@ -90,8 +89,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                     <GalleryVerticalEnd className="size-4" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
-                                    <span className="truncate font-semibold">PrintPOS</span>
-                                    <span className="truncate text-xs">Management</span>
+                                    <span className="truncate font-semibold">برينت بوس</span>
+                                    <span className="truncate text-xs">نظام إدارة المطابع</span>
                                 </div>
                             </a>
                         </SidebarMenuButton>
@@ -100,7 +99,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
-                    <SidebarGroupLabel>Menu</SidebarGroupLabel>
+                    <SidebarGroupLabel>القائمة</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
                             {items.map((item) => (
@@ -122,7 +121,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuItem>
                         <SidebarMenuButton onClick={() => logout()}>
                             <LogOut />
-                            <span>Log Out</span>
+                            <span>تسجيل الخروج</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

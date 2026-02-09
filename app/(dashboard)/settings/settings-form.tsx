@@ -31,7 +31,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: SettingsMap
             <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label>Default B&W Cost ($)</Label>
+                        <Label>Default B&W Cost (EGP)</Label>
                         <Input
                             type="number" step="0.01"
                             value={settings.default_bw_cost}
@@ -39,7 +39,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: SettingsMap
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label>Default Color Cost ($)</Label>
+                        <Label>Default Color Cost (EGP)</Label>
                         <Input
                             type="number" step="0.01"
                             value={settings.default_color_cost}

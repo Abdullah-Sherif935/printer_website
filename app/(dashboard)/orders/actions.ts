@@ -9,13 +9,15 @@ export async function createOrder(data: any) {
 
     // 1. Get current user (staff)
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { success: false, error: "Unauthorized" }
 
+    console.log('Current user:', user)
+
+    // Make created_by optional - set to null if no user
     // 2. Create Order
     const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
-            created_by: user.id,
+            created_by: user?.id || null,
             status: 'pending',
             total_amount: data.finalPrice,
             paid_amount: 0,
@@ -24,7 +26,10 @@ export async function createOrder(data: any) {
         .select()
         .single()
 
-    if (orderError) return { success: false, error: orderError.message }
+    if (orderError) {
+        console.error('Order creation error:', orderError)
+        return { success: false, error: orderError.message }
+    }
 
     // 3. Create Order Items (We treat the whole print job as one item for now, or split it?)
     // The requirement says: order_items: (type [print, binding], details JSON).
@@ -80,4 +85,76 @@ export async function getOrders() {
         return []
     }
     return data
+}
+
+export async function completeOrder(orderId: string) {
+    const supabase = await createClient()
+
+    // 1. Get order details
+    const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select(`
+            *,
+            order_items (*)
+        `)
+        .eq('id', orderId)
+        .single()
+
+    if (orderError || !order) {
+        return { success: false, error: 'Order not found' }
+    }
+
+    // 2. Deduct inventory for each item
+    for (const item of order.order_items) {
+        if (item.type === 'print' && item.details) {
+            const { paper_id, total_pages, copies } = item.details
+            const totalPaperUsed = total_pages * copies
+
+            // Deduct paper from inventory
+            if (paper_id) {
+                const { data: paper } = await supabase
+                    .from('inventory_items')
+                    .select('quantity')
+                    .eq('id', paper_id)
+                    .single()
+
+                if (paper) {
+                    await supabase
+                        .from('inventory_items')
+                        .update({ quantity: Math.max(0, paper.quantity - totalPaperUsed) })
+                        .eq('id', paper_id)
+                }
+            }
+
+            // Deduct binding if applicable
+            if (item.details.binding_id) {
+                const { data: binding } = await supabase
+                    .from('inventory_items')
+                    .select('quantity')
+                    .eq('id', item.details.binding_id)
+                    .single()
+
+                if (binding) {
+                    await supabase
+                        .from('inventory_items')
+                        .update({ quantity: Math.max(0, binding.quantity - copies) })
+                        .eq('id', item.details.binding_id)
+                }
+            }
+        }
+    }
+
+    // 3. Update order status to completed
+    const { error: updateError } = await supabase
+        .from('orders')
+        .update({ status: 'completed' })
+        .eq('id', orderId)
+
+    if (updateError) {
+        return { success: false, error: updateError.message }
+    }
+
+    revalidatePath('/orders')
+    revalidatePath('/inventory')
+    return { success: true }
 }

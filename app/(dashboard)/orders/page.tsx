@@ -11,17 +11,18 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { CompleteOrderButton } from "./complete-button"
 
 export default async function OrdersPage() {
     const orders = await getOrders()
 
     return (
-        <div className="container mx-auto py-10">
-            <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-bold">Orders</h1>
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <div className="flex items-center justify-between">
+                <h2 className="text-3xl font-bold tracking-tight">قائمة الطلبات</h2>
                 <Button asChild>
                     <Link href="/orders/new">
-                        <Plus className="mr-2 h-4 w-4" /> New Order
+                        <Plus className="mr-2 h-4 w-4" /> طلب جديد
                     </Link>
                 </Button>
             </div>
@@ -29,13 +30,13 @@ export default async function OrdersPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Order ID</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Customer</TableHead>
-                            <TableHead>Total</TableHead>
-                            <TableHead>Paid</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead>رقم الطلب</TableHead>
+                            <TableHead>التاريخ</TableHead>
+                            <TableHead>الحالة</TableHead>
+                            <TableHead>العميل</TableHead>
+                            <TableHead>المبلغ</TableHead>
+                            <TableHead>المدفوع</TableHead>
+                            <TableHead className="text-right">إجراءات</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -43,24 +44,24 @@ export default async function OrdersPage() {
                             orders.map((order: any) => (
                                 <TableRow key={order.id}>
                                     <TableCell className="font-medium">{order.id.slice(0, 8)}...</TableCell>
-                                    <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
+                                    <TableCell>{new Date(order.created_at).toLocaleDateString('ar-EG')}</TableCell>
                                     <TableCell>
                                         <Badge variant={order.status === 'completed' ? 'default' : 'secondary'}>
-                                            {order.status}
+                                            {order.status === 'completed' ? 'مكتمل' : 'قيد الانتظار'}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell>{order.customers?.name || 'Walk-in'}</TableCell>
-                                    <TableCell>${order.total_amount}</TableCell>
-                                    <TableCell>${order.paid_amount}</TableCell>
+                                    <TableCell>{order.customers?.name || 'عميل عادي'}</TableCell>
+                                    <TableCell>EGP {order.total_amount}</TableCell>
+                                    <TableCell>EGP {order.paid_amount}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm">View</Button>
+                                        <CompleteOrderButton orderId={order.id} status={order.status} />
                                     </TableCell>
                                 </TableRow>
                             ))
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={7} className="h-24 text-center">
-                                    No orders found.
+                                    لا توجد طلبات مسجلة.
                                 </TableCell>
                             </TableRow>
                         )}

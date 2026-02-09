@@ -39,6 +39,10 @@ export function OrderCalculator({ inventory, settings }: OrderCalculatorProps) {
     const cost = useMemo(() => {
         let totalCost = 0
 
+        // Ensure settings have valid values
+        const bwCost = Number(settings.default_bw_cost) || 0.5
+        const colorCost = Number(settings.default_color_cost) || 2.0
+
         // Paper Cost
         const paperCost = paper ? paper.cost_per_unit : 0
         totalCost += paperCost * totalPages * copies
@@ -46,13 +50,13 @@ export function OrderCalculator({ inventory, settings }: OrderCalculatorProps) {
         // Ink Cost
         let inkCost = 0
         if (colorMode === "bw") {
-            inkCost = settings.default_bw_cost * totalPages * copies
+            inkCost = bwCost * totalPages * copies
         } else if (colorMode === "color") {
-            inkCost = settings.default_color_cost * totalPages * copies
+            inkCost = colorCost * totalPages * copies
         } else {
             // Mixed
             const bwPages = totalPages - colorPages
-            inkCost = (settings.default_bw_cost * bwPages + settings.default_color_cost * colorPages) * copies
+            inkCost = (bwCost * bwPages + colorCost * colorPages) * copies
         }
         totalCost += inkCost
 
@@ -60,6 +64,15 @@ export function OrderCalculator({ inventory, settings }: OrderCalculatorProps) {
         if (binding) {
             totalCost += binding.cost_per_unit * copies // Assuming 1 binding per copy
         }
+
+        console.log('Order Calculation:', {
+            totalPages,
+            copies,
+            paperCost,
+            inkCost,
+            totalCost,
+            settings: { bwCost, colorCost }
+        })
 
         return totalCost
     }, [paper, binding, totalPages, copies, colorMode, colorPages, settings])
@@ -74,9 +87,19 @@ export function OrderCalculator({ inventory, settings }: OrderCalculatorProps) {
 
     async function handleSubmit() {
         if (!paperId) {
-            toast.error("Please select a paper type")
+            toast.error("يرجى اختيار نوع الورق")
             return
         }
+
+        console.log('Submitting order with:', {
+            paperId,
+            bindingId,
+            totalPages,
+            copies,
+            colorMode,
+            cost,
+            finalPrice
+        })
 
         const orderData = {
             paperId,
@@ -91,11 +114,13 @@ export function OrderCalculator({ inventory, settings }: OrderCalculatorProps) {
         }
 
         const result = await createOrder(orderData)
+        console.log('Create order result:', result)
+
         if (result.success) {
-            toast.success("Order created successfully!")
+            toast.success("تم إنشاء الطلب بنجاح!")
             router.push("/orders")
         } else {
-            toast.error("Failed to create order: " + result.error)
+            toast.error("فشل إنشاء الطلب: " + result.error)
         }
     }
 
@@ -103,15 +128,15 @@ export function OrderCalculator({ inventory, settings }: OrderCalculatorProps) {
         <div className="grid gap-6 md:grid-cols-2">
             <Card>
                 <CardHeader>
-                    <CardTitle>Order Details</CardTitle>
+                    <CardTitle>تفاصيل الطلب</CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Paper Type</Label>
+                            <Label>نوع الورق</Label>
                             <Select value={paperId} onValueChange={setPaperId}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select Paper" />
+                                    <SelectValue placeholder="اختر الورق" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {inventory.filter(i => i.type === 'paper').map((item) => (
@@ -123,13 +148,13 @@ export function OrderCalculator({ inventory, settings }: OrderCalculatorProps) {
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label>Binding</Label>
+                            <Label>التغليف</Label>
                             <Select value={bindingId} onValueChange={setBindingId}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="No Binding" />
+                                    <SelectValue placeholder="بدون تغليف" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="none">None</SelectItem>
+                                    <SelectItem value="none">بدون</SelectItem>
                                     {inventory.filter(i => i.type === 'binding').map((item) => (
                                         <SelectItem key={item.id} value={item.id}>
                                             {item.name} (${item.cost_per_unit})
@@ -142,7 +167,7 @@ export function OrderCalculator({ inventory, settings }: OrderCalculatorProps) {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Total Pages (per copy)</Label>
+                            <Label>إجمالي الصفحات (لكل نسخة)</Label>
                             <Input
                                 type="number"
                                 min="1"
@@ -151,7 +176,7 @@ export function OrderCalculator({ inventory, settings }: OrderCalculatorProps) {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Copies</Label>
+                            <Label>عدد النسخ</Label>
                             <Input
                                 type="number"
                                 min="1"
@@ -162,35 +187,35 @@ export function OrderCalculator({ inventory, settings }: OrderCalculatorProps) {
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Color Mode</Label>
+                        <Label>نوع الطباعة</Label>
                         <div className="flex items-center space-x-2">
                             <Button
                                 variant={colorMode === "bw" ? "default" : "outline"}
                                 onClick={() => setColorMode("bw")}
                                 size="sm"
                             >
-                                B&W Only
+                                أبيض وأسود
                             </Button>
                             <Button
                                 variant={colorMode === "color" ? "default" : "outline"}
                                 onClick={() => setColorMode("color")}
                                 size="sm"
                             >
-                                All Color
+                                ألوان فقط
                             </Button>
                             <Button
                                 variant={colorMode === "mixed" ? "default" : "outline"}
                                 onClick={() => setColorMode("mixed")}
                                 size="sm"
                             >
-                                Mixed
+                                مختلط
                             </Button>
                         </div>
                     </div>
 
                     {colorMode === "mixed" && (
                         <div className="space-y-2">
-                            <Label>Color Pages Count</Label>
+                            <Label>عدد صفحات الألوان</Label>
                             <Input
                                 type="number"
                                 min="0"
@@ -199,7 +224,7 @@ export function OrderCalculator({ inventory, settings }: OrderCalculatorProps) {
                                 onChange={(e) => setColorPages(parseInt(e.target.value) || 0)}
                             />
                             <p className="text-xs text-muted-foreground">
-                                B&W Pages: {totalPages - colorPages}
+                                صفحات أبيض وأسود: {totalPages - colorPages}
                             </p>
                         </div>
                     )}
@@ -208,24 +233,24 @@ export function OrderCalculator({ inventory, settings }: OrderCalculatorProps) {
 
             <Card className="bg-muted/10 border-2 border-primary/20">
                 <CardHeader>
-                    <CardTitle>Cost & Pricing</CardTitle>
+                    <CardTitle>التكلفة والتسعير</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex justify-between text-sm">
-                        <span>Estimated Cost:</span>
-                        <span className="font-mono font-medium">${cost.toFixed(2)}</span>
+                        <span>التكلفة التقديرية:</span>
+                        <span className="font-mono font-medium">EGP {cost.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>Suggested Price ({settings.default_margin_percent}% margin):</span>
-                        <span className="font-mono">${suggestedPrice.toFixed(2)}</span>
+                        <span>السعر المقترح ({settings.default_margin_percent}% هامش ربح):</span>
+                        <span className="font-mono">EGP {suggestedPrice.toFixed(2)}</span>
                     </div>
 
                     <Separator />
 
                     <div className="space-y-2">
-                        <Label className="text-lg font-semibold">Final Selling Price</Label>
+                        <Label className="text-lg font-semibold">سعر البيع النهائي</Label>
                         <div className="relative">
-                            <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
+                            <span className="absolute left-3 top-2.5 text-muted-foreground">EGP</span>
                             <Input
                                 className="pl-7 text-lg font-bold"
                                 value={manualPrice}
@@ -237,15 +262,15 @@ export function OrderCalculator({ inventory, settings }: OrderCalculatorProps) {
 
                     <div className="rounded-lg bg-green-100 p-3 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                         <div className="flex justify-between font-bold">
-                            <span>Net Profit</span>
-                            <span>${profit.toFixed(2)}</span>
+                            <span>صافي الربح</span>
+                            <span>EGP {profit.toFixed(2)}</span>
                         </div>
                     </div>
 
                 </CardContent>
                 <CardFooter>
                     <Button size="lg" className="w-full" onClick={handleSubmit}>
-                        Create Order
+                        إنشاء الطلب
                     </Button>
                 </CardFooter>
             </Card>

@@ -22,7 +22,7 @@ export function RecentSales({ sales }: { sales: any[] }) {
                             <Badge variant="outline" className="text-[10px] h-4 px-1">{sale.status}</Badge>
                         </div>
                     </div>
-                    <div className="ml-auto font-medium">+${sale.total_amount}</div>
+                    <div className="ml-auto font-medium">+EGP{sale.total_amount}</div>
                 </div>
             ))}
             {sales.length === 0 && <div className="text-sm text-muted-foreground">No recent sales.</div>}

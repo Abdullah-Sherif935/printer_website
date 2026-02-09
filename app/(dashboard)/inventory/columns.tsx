@@ -41,7 +41,7 @@ export const columns: ColumnDef<InventoryItem>[] = [
         accessorKey: "cost_per_unit",
         header: "Cost/Unit",
         cell: ({ row }) => {
-            return <span>${row.getValue("cost_per_unit")}</span>
+            return <span>EGP {row.getValue("cost_per_unit")}</span>
         }
     },
     {

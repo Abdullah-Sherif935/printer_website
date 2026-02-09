@@ -15,46 +15,46 @@ export default async function DashboardPage() {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+                <h2 className="text-3xl font-bold tracking-tight">لوحة التحكم</h2>
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Total Revenue
+                            إجمالي الإيرادات
                         </CardTitle>
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</div>
+                        <div className="text-2xl font-bold">EGP {stats.totalRevenue.toFixed(2)}</div>
                         <p className="text-xs text-muted-foreground">
-                            +20.1% from last month
+                            +20.1% من الشهر الماضي
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Active Orders
+                            الطلبات النشطة
                         </CardTitle>
                         <Activity className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.activeOrders}</div>
                         <p className="text-xs text-muted-foreground">
-                            Processing or pending
+                            قيد المعالجة
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
+                        <CardTitle className="text-sm font-medium">مخزون منخفض</CardTitle>
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className={`text-2xl font-bold ${stats.lowStockCount > 0 ? 'text-red-500' : ''}`}>{stats.lowStockCount}</div>
                         <p className="text-xs text-muted-foreground">
-                            Items below threshold
+                            أصناف أقل من الحد
                         </p>
                     </CardContent>
                 </Card>
@@ -62,9 +62,9 @@ export default async function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="col-span-4">
                     <CardHeader>
-                        <CardTitle>Overview</CardTitle>
+                        <CardTitle>نظرة عامة</CardTitle>
                         <CardDescription>
-                            Monthly Revenue
+                            الإيرادات الشهرية
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="pl-2">
@@ -73,9 +73,9 @@ export default async function DashboardPage() {
                 </Card>
                 <Card className="col-span-3">
                     <CardHeader>
-                        <CardTitle>Recent Sales</CardTitle>
+                        <CardTitle>آخر المبيعات</CardTitle>
                         <CardDescription>
-                            You made {stats.recentSales.length} sales recently.
+                            لديك {stats.recentSales.length} مبيعات حديثة.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

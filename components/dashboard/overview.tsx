@@ -18,7 +18,7 @@ export function Overview({ data }: { data: any[] }) {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) => `$${value}`}
+                    tickFormatter={(value) => `EGP${value}`}
                 />
                 <Bar
                     dataKey="total"
