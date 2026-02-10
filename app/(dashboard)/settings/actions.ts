@@ -32,13 +32,10 @@ export async function getSettings() {
 export async function updateSettings(settings: SettingsMap) {
     const supabase = await createClient()
 
-    // We update each key. Supabase doesn't support bulk upsert easily for key-value pair rows in this structure without loop or specific logic.
-    // Since it's few items, we loop.
-
     const updates = [
-        { key: 'default_bw_cost', value: settings.default_bw_cost.toString() },
-        { key: 'default_color_cost', value: settings.default_color_cost.toString() },
-        { key: 'default_margin_percent', value: settings.default_margin_percent.toString() },
+        { key: 'default_bw_cost', value: (settings.default_bw_cost || 0).toString() },
+        { key: 'default_color_cost', value: (settings.default_color_cost || 0).toString() },
+        { key: 'default_margin_percent', value: (settings.default_margin_percent || 0).toString() },
     ]
 
     for (const update of updates) {

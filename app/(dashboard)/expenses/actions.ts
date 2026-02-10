@@ -8,23 +8,42 @@ export interface Expense {
     description: string
     amount: number
     category: string
-    date: string
+    category_id?: string
     expense_date: string
     created_at: string
+}
+
+export async function getExpenseCategories() {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('expense_categories')
+        .select('*')
+        .order('name', { ascending: true })
+
+    if (error) {
+        console.error('Error fetching categories:', error)
+        return []
+    }
+    return data
 }
 
 export async function getExpenses() {
     const supabase = await createClient()
     const { data, error } = await supabase
         .from('expenses')
-        .select('*, date:expense_date')
+        .select('*, expense_categories(name)')
         .order('expense_date', { ascending: false })
 
     if (error) {
         console.error('Error fetching expenses:', error)
         return []
     }
-    return data as Expense[]
+
+    // Map category name from relation if text column is empty
+    return data.map(exp => ({
+        ...exp,
+        category: exp.expense_categories?.name || exp.category
+    })) as Expense[]
 }
 
 export async function addExpense(formData: FormData) {
@@ -32,6 +51,7 @@ export async function addExpense(formData: FormData) {
 
     const description = formData.get('description') as string
     const amount = parseFloat(formData.get('amount') as string)
+    const categoryId = formData.get('category_id') as string
     const category = formData.get('category') as string
     const dateValue = formData.get('date') as string || formData.get('expense_date') as string
 
@@ -40,7 +60,8 @@ export async function addExpense(formData: FormData) {
         .insert({
             description,
             amount,
-            category,
+            category_id: categoryId || null,
+            category: category || null,
             expense_date: dateValue || new Date().toISOString().split('T')[0]
         })
 

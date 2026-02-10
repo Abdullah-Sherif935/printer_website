@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 export type InventoryItem = {
     id: string
     name: string
-    type: 'paper' | 'binding' | 'ink' | 'other'
+    type: 'paper' | 'binding' | 'cover' | 'ink' | 'other'
     quantity: number
     cost_per_unit: number
     low_stock_threshold: number
@@ -60,4 +60,24 @@ export async function deleteInventoryItem(id: string) {
 
     revalidatePath('/inventory')
     return { message: 'Item deleted successfully' }
+}
+export async function updateInventoryItem(id: string, prevState: any, formData: FormData) {
+    const supabase = await createClient()
+
+    const item = {
+        name: formData.get('name') as string,
+        type: formData.get('type') as string,
+        quantity: parseInt(formData.get('quantity') as string),
+        cost_per_unit: parseFloat(formData.get('cost_per_unit') as string),
+        low_stock_threshold: parseInt(formData.get('low_stock_threshold') as string),
+    }
+
+    const { error } = await supabase.from('inventory_items').update(item).eq('id', id)
+
+    if (error) {
+        return { message: error.message }
+    }
+
+    revalidatePath('/inventory')
+    return { message: 'Item updated successfully' }
 }

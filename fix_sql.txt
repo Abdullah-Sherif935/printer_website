@@ -1,0 +1,19 @@
+
+import { createClient } from './lib/supabase/server'
+
+async function fix() {
+    const supabase = await createClient()
+    const sql = `
+        DO $$
+        BEGIN
+            ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_status_check;
+        END $$;
+        ALTER TABLE public.orders ADD CONSTRAINT orders_status_check 
+        CHECK (status IN ('pending', 'processing', 'completed', 'cancelled', 'partial_payment', 'partially_paid'));
+        ALTER TABLE public.orders ALTER COLUMN created_by DROP NOT NULL;
+    `;
+    
+    // We can't run raw SQL easily via the client unless we have a RPC
+    console.log("Please run this SQL in your Supabase SQL editor:")
+    console.log(sql)
+}

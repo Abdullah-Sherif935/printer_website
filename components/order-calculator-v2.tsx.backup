@@ -1,0 +1,384 @@
+"use client"
+
+import { useState, useMemo } from "react"
+import { InventoryItem } from "@/app/(dashboard)/inventory/actions"
+import { SettingsMap } from "@/app/(dashboard)/settings/actions"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
+import { createOrder } from "@/app/(dashboard)/orders/actions-v2"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
+import { Plus, Trash2 } from "lucide-react"
+
+interface OrderCalculatorProps {
+    inventory: InventoryItem[]
+    settings: SettingsMap
+}
+
+interface OrderItem {
+    id: string
+    paperId: string
+    totalPages: number
+    copies: number
+    colorMode: "bw" | "color" | "mixed"
+    colorPages: number
+}
+
+export function OrderCalculator({ inventory, settings }: OrderCalculatorProps) {
+    const router = useRouter()
+
+    // Multiple Items State
+    const [items, setItems] = useState<OrderItem[]>([{
+        id: Math.random().toString(),
+        paperId: "",
+        totalPages: 1,
+        copies: 1,
+        colorMode: "bw",
+        colorPages: 0
+    }])
+
+    // Binding state (applies to all items)
+    const [useBinding, setUseBinding] = useState(false)
+    const [bindingId, setBindingId] = useState<string>("")
+
+    const [manualPrice, setManualPrice] = useState<string>("")
+
+    // Add new item
+    const addItem = () => {
+        setItems([...items, {
+            id: Math.random().toString(),
+            paperId: "",
+            totalPages: 1,
+            copies: 1,
+            colorMode: "bw",
+            colorPages: 0
+        }])
+    }
+
+    // Remove item
+    const removeItem = (id: string) => {
+        if (items.length > 1) {
+            setItems(items.filter(item => item.id !== id))
+        }
+    }
+
+    // Update item
+    const updateItem = (id: string, updates: Partial<OrderItem>) => {
+        setItems(items.map(item =>
+            item.id === id ? { ...item, ...updates } : item
+        ))
+    }
+
+    // Calculate total cost
+    const { totalCost, itemsBreakdown } = useMemo(() => {
+        const bwCost = Number(settings.default_bw_cost) || 0.5
+        const colorCost = Number(settings.default_color_cost) || 2.0
+        let total = 0
+        const breakdown: any[] = []
+
+        items.forEach(item => {
+            const paper = inventory.find(i => i.id === item.paperId)
+            if (!paper) return
+
+            let itemCost = 0
+
+            // Paper cost
+            const paperCost = paper.cost_per_unit * item.totalPages * item.copies
+            itemCost += paperCost
+
+            // Ink cost
+            let inkCost = 0
+            if (item.colorMode === "bw") {
+                inkCost = bwCost * item.totalPages * item.copies
+            } else if (item.colorMode === "color") {
+                inkCost = colorCost * item.totalPages * item.copies
+            } else {
+                const bwPages = item.totalPages - item.colorPages
+                inkCost = (bwCost * bwPages + colorCost * item.colorPages) * item.copies
+            }
+            itemCost += inkCost
+
+            breakdown.push({ ...item, cost: itemCost })
+            total += itemCost
+        })
+
+        // Add binding cost
+        if (useBinding && bindingId) {
+            const binding = inventory.find(i => i.id === bindingId)
+            if (binding) {
+                const totalCopies = items.reduce((sum, item) => sum + item.copies, 0)
+                total += binding.cost_per_unit * totalCopies
+            }
+        }
+
+        return { totalCost: total, itemsBreakdown: breakdown }
+    }, [items, useBinding, bindingId, inventory, settings])
+
+    const suggestedPrice = useMemo(() => {
+        const margin = Number(settings.default_margin_percent) || 20
+        return totalCost * (1 + margin / 100)
+    }, [totalCost, settings])
+
+    const finalPrice = manualPrice ? parseFloat(manualPrice) : suggestedPrice
+    const profit = finalPrice - totalCost
+
+    async function handleSubmit() {
+        // Validation
+        const invalidItems = items.filter(item => !item.paperId)
+        if (invalidItems.length > 0) {
+            toast.error("يرجى اختيار نوع الورق لجميع العناصر")
+            return
+        }
+
+        if (useBinding && !bindingId) {
+            toast.error("يرجى اختيار نوع التغليف")
+            return
+        }
+
+        const orderData = {
+            items: items.map(item => ({
+                paperId: item.paperId,
+                totalPages: item.totalPages,
+                copies: item.copies,
+                colorMode: item.colorMode,
+                colorPages: item.colorMode === "mixed" ? item.colorPages : (item.colorMode === "color" ? item.totalPages : 0),
+                bwPages: item.colorMode === "mixed" ? (item.totalPages - item.colorPages) : (item.colorMode === "bw" ? item.totalPages : 0),
+            })),
+            bindingId: useBinding ? bindingId : null,
+            totalCost,
+            finalPrice,
+        }
+
+        const result = await createOrder(orderData)
+
+        if (result.success) {
+            toast.success("تم إنشاء الطلب بنجاح!")
+            router.push("/orders")
+        } else {
+            toast.error("فشل إنشاء الطلب: " + result.error)
+        }
+    }
+
+    return (
+        <div className="grid gap-6 lg:grid-cols-[1fr,400px]">
+            {/* Items Section */}
+            <div className="space-y-4">
+                {items.map((item, index) => (
+                    <Card key={item.id}>
+                        <CardHeader className="flex flex-row items-center justify-between pb-3">
+                            <CardTitle className="text-lg">عنصر {index + 1}</CardTitle>
+                            {items.length > 1 && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeItem(item.id)}
+                                >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                            )}
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {/* Paper Type */}
+                            <div className="space-y-2">
+                                <Label>نوع الورق *</Label>
+                                <Select
+                                    value={item.paperId}
+                                    onValueChange={(value) => updateItem(item.id, { paperId: value })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="اختر الورق" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {inventory.filter(i => i.type === 'paper').map((paper) => (
+                                            <SelectItem key={paper.id} value={paper.id}>
+                                                {paper.name} ({paper.cost_per_unit} EGP/ورقة)
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Pages and Copies */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>عدد النسخ</Label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={item.copies}
+                                        onChange={(e) => updateItem(item.id, { copies: parseInt(e.target.value) || 1 })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>عدد الصفحات (كل نسخة)</Label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={item.totalPages}
+                                        onChange={(e) => updateItem(item.id, { totalPages: parseInt(e.target.value) || 1 })}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Color Mode */}
+                            <div className="space-y-2">
+                                <Label>نوع الطباعة</Label>
+                                <div className="flex gap-2">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant={item.colorMode === "bw" ? "default" : "outline"}
+                                        onClick={() => updateItem(item.id, { colorMode: "bw" })}
+                                        className="flex-1"
+                                    >
+                                        أبيض وأسود
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant={item.colorMode === "color" ? "default" : "outline"}
+                                        onClick={() => updateItem(item.id, { colorMode: "color" })}
+                                        className="flex-1"
+                                    >
+                                        ملون
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant={item.colorMode === "mixed" ? "default" : "outline"}
+                                        onClick={() => updateItem(item.id, { colorMode: "mixed" })}
+                                        className="flex-1"
+                                    >
+                                        مختلط
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {item.colorMode === "mixed" && (
+                                <div className="space-y-2">
+                                    <Label>عدد الصفحات الملونة</Label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        max={item.totalPages}
+                                        value={item.colorPages}
+                                        onChange={(e) => updateItem(item.id, { colorPages: parseInt(e.target.value) || 0 })}
+                                    />
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                ))}
+
+                {/* Add Item Button */}
+                <Button
+                    variant="outline"
+                    onClick={addItem}
+                    className="w-full"
+                >
+                    <Plus className="ml-2 h-4 w-4" />
+                    إضافة عنصر جديد
+                </Button>
+
+                {/* Binding Section */}
+                <Card>
+                    <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg">التغليف</CardTitle>
+                            <div className="flex items-center gap-2">
+                                <Switch
+                                    id="use-binding"
+                                    checked={useBinding}
+                                    onCheckedChange={setUseBinding}
+                                />
+                                <Label htmlFor="use-binding" className="text-sm font-normal cursor-pointer">
+                                    {useBinding ? "استخدام التغليف" : "بدون تغليف"}
+                                </Label>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    {useBinding && (
+                        <CardContent className="pt-0">
+                            <Select value={bindingId} onValueChange={setBindingId}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="اختر نوع التغليف" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {inventory.filter(i => i.type === 'binding').map((item) => (
+                                        <SelectItem key={item.id} value={item.id}>
+                                            {item.name} ({item.cost_per_unit} EGP/قطعة)
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </CardContent>
+                    )}
+                </Card>
+            </div>
+
+            {/* Summary Section - Fixed on the side */}
+            <div className="lg:sticky lg:top-6 h-fit">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>الملخص المالي</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">التكلفة الإجمالية:</span>
+                                <span className="font-bold">EGP {totalCost.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">
+                                    السعر المقترح ({settings.default_margin_percent}% ربح):
+                                </span>
+                                <span className="font-bold text-green-600">
+                                    EGP {suggestedPrice.toFixed(2)}
+                                </span>
+                            </div>
+                        </div>
+
+                        <Separator />
+
+                        <div className="space-y-2">
+                            <Label>سعر البيع النهائي</Label>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                placeholder={suggestedPrice.toFixed(2)}
+                                value={manualPrice}
+                                onChange={(e) => setManualPrice(e.target.value)}
+                                dir="ltr"
+                            />
+                        </div>
+
+                        <div className="space-y-2 rounded-lg bg-muted p-4">
+                            <div className="flex justify-between">
+                                <span className="font-bold">السعر النهائي</span>
+                                <span className="text-2xl font-bold">
+                                    {finalPrice.toFixed(2)} EGP
+                                </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">صافي الربح</span>
+                                <span className={profit >= 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+                                    {profit >= 0 ? "+" : ""}{profit.toFixed(2)} EGP
+                                </span>
+                            </div>
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={handleSubmit} className="w-full" size="lg">
+                            إنشاء الطلب
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
+        </div>
+    )
+}

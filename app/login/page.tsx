@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Printer } from 'lucide-react'
+import Image from 'next/image'
 
 export default function LoginPage({
     searchParams,
@@ -13,11 +13,19 @@ export default function LoginPage({
     return (
         <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
             <Card className="w-full max-w-sm">
+
                 <CardHeader className="text-center">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                        <Printer className="h-6 w-6 text-primary" />
+                    <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl border border-border bg-white shadow-md p-2">
+                        <Image
+                            src="/logo.png"
+                            alt="PrintPOS Logo"
+                            width={96}
+                            height={96}
+                            className="object-contain w-full h-full"
+                            priority
+                        />
                     </div>
-                    <CardTitle className="text-2xl">PrintPOS</CardTitle>
+                    <CardTitle className="text-2xl">المهندس للطباعة</CardTitle>
                     <CardDescription>
                         Enter your credentials to access the system.
                     </CardDescription>
@@ -57,7 +65,7 @@ export default function LoginPage({
                         Sign in
                     </Button>
                 </CardFooter>
-            </Card>
-        </div>
+            </Card >
+        </div >
     )
 }

@@ -1,8 +1,10 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { InventoryItem } from "./actions"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { InventoryItem, deleteInventoryItem } from "./actions"
+import { InventoryForm } from "./inventory-form"
+import { toast } from "sonner"
+import { ArrowUpDown, MoreHorizontal, Copy, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     DropdownMenu,
@@ -12,7 +14,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { deleteInventoryItem } from "./actions"
 
 export const columns: ColumnDef<InventoryItem>[] = [
     {
@@ -22,26 +23,28 @@ export const columns: ColumnDef<InventoryItem>[] = [
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    className="p-0 hover:bg-transparent font-bold"
                 >
-                    Name
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    الاسم
+                    <ArrowUpDown className="mr-2 h-4 w-4" />
                 </Button>
             )
         },
     },
     {
         accessorKey: "type",
-        header: "Type",
+        header: () => <div className="font-bold">النوع</div>,
     },
     {
         accessorKey: "quantity",
-        header: "Quantity",
+        header: () => <div className="font-bold text-center">الكمية</div>,
+        cell: ({ row }) => <div className="text-center">{row.getValue("quantity")}</div>
     },
     {
         accessorKey: "cost_per_unit",
-        header: "Cost/Unit",
+        header: () => <div className="font-bold text-center">تكلفة الوحدة</div>,
         cell: ({ row }) => {
-            return <span>EGP {row.getValue("cost_per_unit")}</span>
+            return <div className="text-center font-mono">EGP {row.getValue("cost_per_unit")}</div>
         }
     },
     {
@@ -52,25 +55,48 @@ export const columns: ColumnDef<InventoryItem>[] = [
             return (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
+                        <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-zinc-100">
+                            <span className="sr-only">افتح القائمة</span>
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuContent align="end" className="w-[160px] font-bold">
+                        <DropdownMenuLabel className="text-right opacity-50 text-xs">إجراءات الصنف</DropdownMenuLabel>
                         <DropdownMenuItem
-                            onClick={() => navigator.clipboard.writeText(item.id)}
+                            onClick={() => {
+                                navigator.clipboard.writeText(item.id)
+                                toast.success("تم نسخ معرف الصنف")
+                            }}
+                            className="text-right justify-end gap-2"
                         >
-                            Copy item ID
+                            نسخ المعرف
+                            <Copy className="h-3.5 w-3.5" />
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>Edit item</DropdownMenuItem>
-                        <DropdownMenuItem onClick={async () => {
-                            if (confirm('Are you sure you want to delete this item?')) {
-                                await deleteInventoryItem(item.id)
+
+                        <InventoryForm
+                            initialItem={item}
+                            trigger={
+                                <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-right justify-end gap-2 w-full">
+                                    تعديل الصنف
+                                    <Edit className="h-3.5 w-3.5" />
+                                </div>
                             }
-                        }} className="text-red-600">Delete item</DropdownMenuItem>
+                        />
+
+                        <DropdownMenuItem onClick={async () => {
+                            if (confirm('هل أنت متأكد من حذف هذا الصنف نهائياً؟')) {
+                                const result = await deleteInventoryItem(item.id)
+                                if (result.message.includes('successfully')) {
+                                    toast.success("تم حذف الصنف بنجاح")
+                                } else {
+                                    toast.error("فشل الحذف: " + result.message)
+                                }
+                            }
+                        }} className="text-red-600 font-bold text-right justify-end gap-2">
+                            حذف الصنف
+                            <Trash2 className="h-3.5 w-3.5" />
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             )

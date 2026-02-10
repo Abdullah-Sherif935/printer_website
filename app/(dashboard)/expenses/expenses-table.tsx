@@ -40,21 +40,21 @@ export function ExpensesTable({ expenses }: { expenses: Expense[] }) {
     return (
         <div className="space-y-3">
             {expenses.map((expense) => (
-                <Card key={expense.id}>
-                    <CardContent className="flex items-center justify-between p-4">
+                <Card key={expense.id} className="border-none shadow-sm hover:shadow-md transition-shadow">
+                    <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
                         <div className="flex items-center gap-4 flex-1">
-                            <Badge className={categoryColors[expense.category] || categoryColors.other}>
+                            <Badge className={`${categoryColors[expense.category] || categoryColors.other} text-white border-none h-7 px-3 rounded-full font-bold whitespace-nowrap`}>
                                 {categoryNames[expense.category] || expense.category}
                             </Badge>
-                            <div className="flex-1">
-                                <p className="font-medium">{expense.description}</p>
-                                <p className="text-sm text-muted-foreground">
-                                    {new Date(expense.date).toLocaleDateString('ar-EG')}
+                            <div className="flex-1 min-w-0">
+                                <p className="font-bold text-zinc-800 line-clamp-1">{expense.description}</p>
+                                <p className="text-xs text-muted-foreground">
+                                    {new Date(expense.expense_date).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <div className="text-xl font-bold text-red-600">
+                        <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 pt-3 sm:pt-0">
+                            <div className="text-xl md:text-2xl font-black text-red-600 font-mono">
                                 EGP {expense.amount.toFixed(2)}
                             </div>
                             <Button

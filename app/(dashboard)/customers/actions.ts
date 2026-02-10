@@ -50,6 +50,27 @@ export async function addCustomer(formData: FormData) {
     return { success: true }
 }
 
+export async function quickAddCustomer(data: { name: string, phone?: string }) {
+    const supabase = await createClient()
+
+    const { data: customer, error } = await supabase
+        .from('customers')
+        .insert({
+            name: data.name,
+            phone: data.phone || null,
+            current_debt: 0
+        })
+        .select()
+        .single()
+
+    if (error) {
+        return { success: false, error: error.message }
+    }
+
+    revalidatePath('/customers')
+    return { success: true, customer: customer as Customer }
+}
+
 export async function updateDebt(customerId: string, amount: number, operation: 'add' | 'subtract') {
     const supabase = await createClient()
 
@@ -64,9 +85,10 @@ export async function updateDebt(customerId: string, amount: number, operation: 
         return { success: false, error: 'Customer not found' }
     }
 
+    const currentDebt = customer.current_debt || 0
     const newDebt = operation === 'add'
-        ? customer.current_debt + amount
-        : customer.current_debt - amount
+        ? currentDebt + amount
+        : currentDebt - amount
 
     const { error } = await supabase
         .from('customers')
@@ -81,15 +103,45 @@ export async function updateDebt(customerId: string, amount: number, operation: 
     return { success: true }
 }
 
+export async function setDebt(customerId: string, amount: number) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('customers')
+        .update({ current_debt: Math.max(0, amount) })
+        .eq('id', customerId)
+
+    if (error) {
+        return { success: false, error: error.message }
+    }
+
+    revalidatePath('/customers')
+    return { success: true }
+}
+
 export async function deleteCustomer(customerId: string) {
     const supabase = await createClient()
+
+    // 1. First, null out references in orders to avoid FK violation
+    const { error: updateError } = await supabase
+        .from('orders')
+        .update({ customer_id: null })
+        .eq('customer_id', customerId)
+
+    if (updateError) {
+        console.error('Error nulling customer orders:', updateError)
+        // We continue anyway, as there might be no orders
+    }
+
+    // 2. Now delete the customer
     const { error } = await supabase
         .from('customers')
         .delete()
         .eq('id', customerId)
 
     if (error) {
-        return { success: false, error: error.message }
+        console.error('Customer deletion error details:', error)
+        return { success: false, error: `${error.message} (${error.code})` }
     }
 
     revalidatePath('/customers')

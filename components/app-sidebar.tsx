@@ -2,56 +2,49 @@
 
 import * as React from "react"
 import {
-    AudioWaveform,
-    BookOpen,
-    Bot,
-    Command,
-    Frame,
-    GalleryVerticalEnd,
-    Map,
-    PieChart,
-    Settings2,
-    SquareTerminal,
     Home,
-    PlusCircle,
+    ShoppingCart,
     Package,
+    Receipt,
     Users,
-    DollarSign,
     Settings,
-    LogOut
+    TrendingUp,
+    Printer,
+    ListTodo
 } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 import {
     Sidebar,
     SidebarContent,
-    SidebarFooter,
-    SidebarHeader,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarHeader,
+    SidebarFooter,
     SidebarRail,
-    SidebarGroup,
-    SidebarGroupLabel,
-    SidebarGroupContent,
 } from "@/components/ui/sidebar"
-import { logout } from "@/app/login/actions"
-import { usePathname } from "next/navigation"
-import Link from "next/link"
-const items = [
+
+const menuItems = [
     {
-        title: "لوحة التحكم",
+        title: "الرئيسية",
         url: "/",
         icon: Home,
     },
     {
-        title: "طلب جديد",
+        title: "تسجيل مبيعات",
         url: "/orders/new",
-        icon: PlusCircle,
+        icon: TrendingUp,
     },
     {
-        title: "الطلبات",
+        title: "سجل المبيعات",
         url: "/orders",
-        icon: SquareTerminal,
+        icon: ShoppingCart,
     },
     {
         title: "المخزون",
@@ -64,9 +57,14 @@ const items = [
         icon: Users,
     },
     {
+        title: "قائمة المهام",
+        url: "/active_orders",
+        icon: ListTodo,
+    },
+    {
         title: "المصروفات",
         url: "/expenses",
-        icon: DollarSign,
+        icon: Receipt,
     },
     {
         title: "الإعدادات",
@@ -75,56 +73,63 @@ const items = [
     },
 ]
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar() {
     const pathname = usePathname()
 
     return (
-        <Sidebar collapsible="icon" {...props}>
-            <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <a href="#">
-                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                                    <GalleryVerticalEnd className="size-4" />
-                                </div>
-                                <div className="grid flex-1 text-left text-sm leading-tight">
-                                    <span className="truncate font-semibold">برينت بوس</span>
-                                    <span className="truncate text-xs">نظام إدارة المطابع</span>
-                                </div>
-                            </a>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+        <Sidebar side="right" collapsible="icon">
+
+
+            <SidebarHeader className="border-b px-4 py-4">
+                <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-border bg-white shadow-sm p-1">
+                        <Image
+                            src="/logo.png"
+                            alt="PrintPOS Logo"
+                            width={48}
+                            height={48}
+                            className="object-contain w-full h-full"
+                            priority
+                        />
+                    </div>
+                    <div className="flex flex-col leading-tight">
+                        <span className="font-black text-lg">المهندس للطباعة</span>
+                        <span className="text-xs text-muted-foreground">نظام إدارة المطبعة</span>
+                    </div>
+                </div>
             </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
-                    <SidebarGroupLabel>القائمة</SidebarGroupLabel>
+                    <SidebarGroupLabel>القائمة الرئيسية</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {items.map((item) => (
-                                <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton asChild isActive={pathname === item.url} tooltip={item.title}>
-                                        <Link href={item.url}>
-                                            <item.icon />
-                                            <span>{item.title}</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
+                            {menuItems.map((item) => {
+                                const isActive = pathname === item.url ||
+                                    (item.url !== "/" && pathname.startsWith(item.url))
+
+                                return (
+                                    <SidebarMenuItem key={item.title}>
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={isActive}
+                                            tooltip={item.title}
+                                        >
+                                            <Link href={item.url} className="font-bold">
+                                                <item.icon className="h-5 w-5" />
+                                                <span>{item.title}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                )
+                            })}
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton onClick={() => logout()}>
-                            <LogOut />
-                            <span>تسجيل الخروج</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+            <SidebarFooter className="border-t p-4">
+                <div className="text-xs text-muted-foreground text-center">
+                    نسخة 1.0.0
+                </div>
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>

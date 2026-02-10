@@ -1,85 +1,138 @@
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Overview } from '@/components/dashboard/overview'
+import { RevenueExpensesChart } from '@/components/dashboard/revenue-expenses-chart'
+import { RevenueBreakdownChart } from '@/components/dashboard/revenue-breakdown-chart'
+import { DailyPerformanceChart } from '@/components/dashboard/daily-performance-chart'
 import { RecentSales } from '@/components/dashboard/recent-sales'
 import { getDashboardStats } from './actions'
-import { DollarSign, CreditCard, Activity, Users } from "lucide-react"
+import { Banknote, Wallet, TrendingUp, ShoppingBag, AlertTriangle, PieChart as PieChartIcon, LineChart as LineChartIcon, BarChart3, ListTodo } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export default async function DashboardPage() {
     const stats = await getDashboardStats()
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
     if (!stats) return <div>Failed to load stats</div>
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">لوحة التحكم</h2>
+        <div className="flex-1 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h2 className="text-2xl md:text-3xl font-black tracking-tight flex gap-3 items-center">
+                    <BarChart3 className="h-7 w-7 md:h-8 md:w-8 text-primary" />
+                    لوحة التحليل المالي
+                </h2>
+                <div className="bg-white dark:bg-zinc-900 px-4 py-2 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 text-xs md:text-sm font-bold w-full sm:w-auto text-center">
+                    {new Date().toLocaleDateString('ar-EG', { dateStyle: 'full' })}
+                </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            إجمالي الإيرادات
-                        </CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+
+            {/* Main Financial KPI Cards */}
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                {/* ... existing cards ... */}
+                <Card className="border-none shadow-lg bg-emerald-600 text-white rounded-2xl overflow-hidden">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-bold opacity-80 text-right">صافي الربح</CardTitle>
+                        <TrendingUp className="h-5 w-5 opacity-50" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">EGP {stats.totalRevenue.toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground">
-                            +20.1% من الشهر الماضي
-                        </p>
+                        <div className="text-2xl md:text-3xl font-black">EGP {stats.netProfit.toFixed(2)}</div>
+                        <p className="text-[10px] md:text-xs mt-2 opacity-70">بعد خصم المصاريف وتكلفة الخامات</p>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            الطلبات النشطة
-                        </CardTitle>
-                        <Activity className="h-4 w-4 text-muted-foreground" />
+
+                <Card className="border-none shadow-lg bg-white dark:bg-zinc-900 rounded-2xl border-r-4 border-r-blue-500">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-bold text-zinc-500 text-right">إجمالي المبيعات</CardTitle>
+                        <Banknote className="h-5 w-5 text-blue-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats.activeOrders}</div>
-                        <p className="text-xs text-muted-foreground">
-                            قيد المعالجة
-                        </p>
+                        <div className="text-2xl md:text-3xl font-black">EGP {stats.totalRevenue.toFixed(2)}</div>
+                        <p className="text-[10px] md:text-xs text-muted-foreground mt-2">إجمالي دخل القبو بالكامل</p>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">مخزون منخفض</CardTitle>
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+
+                <Card className="border-none shadow-lg bg-white dark:bg-zinc-900 rounded-2xl border-r-4 border-r-red-500">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-bold text-zinc-500 text-right">مصاريف التشغيل</CardTitle>
+                        <Wallet className="h-5 w-5 text-red-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className={`text-2xl font-bold ${stats.lowStockCount > 0 ? 'text-red-500' : ''}`}>{stats.lowStockCount}</div>
-                        <p className="text-xs text-muted-foreground">
-                            أصناف أقل من الحد
-                        </p>
+                        <div className="text-2xl md:text-3xl font-black">EGP {stats.totalOpExpenses.toFixed(2)}</div>
+                        <p className="text-[10px] md:text-xs text-muted-foreground mt-2">كهرباء، إيجار، عمالة...</p>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-lg bg-white dark:bg-zinc-900 rounded-2xl border-r-4 border-r-amber-500">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-bold text-zinc-500 text-right">مخزون منخفض</CardTitle>
+                        <AlertTriangle className={`h-5 w-5 ${stats.lowStockCount > 0 ? 'text-amber-500 animate-pulse' : 'text-zinc-300'}`} />
+                    </CardHeader>
+                    <CardContent>
+                        <div className={`text-2xl md:text-3xl font-black ${stats.lowStockCount > 0 ? 'text-amber-600' : ''}`}>{stats.lowStockCount}</div>
+                        <p className="text-[10px] md:text-xs text-muted-foreground mt-2">أصناف تحتاج إعادة طلب</p>
                     </CardContent>
                 </Card>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4">
-                    <CardHeader>
-                        <CardTitle>نظرة عامة</CardTitle>
-                        <CardDescription>
-                            الإيرادات الشهرية
-                        </CardDescription>
+
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-7">
+                {/* Main Graph: Revenue vs Costs */}
+                <Card className="lg:col-span-4 border-none shadow-xl rounded-2xl overflow-hidden">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="text-lg md:text-xl">الإيرادات مقابل المصروفات</CardTitle>
+                            <CardDescription className="text-xs md:text-sm">مقارنة الدخل والخرج لآخر 6 أشهر</CardDescription>
+                        </div>
+                        <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+                            <BarChart3 className="h-5 w-5 text-zinc-500" />
+                        </div>
                     </CardHeader>
-                    <CardContent className="pl-2">
-                        <Overview data={stats.monthlyRevenue} />
+                    <CardContent className="px-1 md:px-2">
+                        <RevenueExpensesChart data={stats.monthlyRevenueVsExpenses} />
                     </CardContent>
                 </Card>
-                <Card className="col-span-3">
-                    <CardHeader>
-                        <CardTitle>آخر المبيعات</CardTitle>
-                        <CardDescription>
-                            لديك {stats.recentSales.length} مبيعات حديثة.
-                        </CardDescription>
+
+                {/* Pie Chart: Revenue Breakdown */}
+                <Card className="lg:col-span-3 border-none shadow-xl rounded-2xl overflow-hidden">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="text-lg md:text-xl">توزيع الدخل</CardTitle>
+                            <CardDescription className="text-xs md:text-sm">مصادر الربح الرئيسية</CardDescription>
+                        </div>
+                        <PieChartIcon className="h-5 w-5 text-zinc-400" />
                     </CardHeader>
                     <CardContent>
-                        <RecentSales sales={stats.recentSales} />
+                        <RevenueBreakdownChart data={stats.sourceBreakdown} />
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="grid gap-6 grid-cols-1 lg:grid-cols-7">
+                {/* Daily Performance */}
+                <Card className="lg:col-span-3 border-none shadow-xl rounded-2xl bg-zinc-900 text-white overflow-hidden">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="text-lg text-white">الأداء اليومي</CardTitle>
+                            <CardDescription className="text-zinc-400 text-xs md:text-sm">مبيعات الشهر الحالي</CardDescription>
+                        </div>
+                        <LineChartIcon className="h-5 w-5 text-blue-400" />
+                    </CardHeader>
+                    <CardContent className="px-1 md:px-2">
+                        <DailyPerformanceChart data={stats.dailyPerformance} />
+                    </CardContent>
+                </Card>
+
+                {/* Recent Sales */}
+                <Card className="lg:col-span-4 border-none shadow-xl rounded-2xl overflow-hidden">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="text-lg md:text-xl text-right">أحدث المبيعات</CardTitle>
+                            <CardDescription className="text-right text-xs md:text-sm">آخر {stats.recentSales.length} عمليات مسجلة</CardDescription>
+                        </div>
+                        <ShoppingBag className="h-5 w-5 text-zinc-400" />
+                    </CardHeader>
+                    <CardContent className="p-0 sm:p-6">
+                        <div className="overflow-x-auto">
+                            <RecentSales sales={stats.recentSales} />
+                        </div>
                     </CardContent>
                 </Card>
             </div>
