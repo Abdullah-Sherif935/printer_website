@@ -33,15 +33,25 @@ export async function updateSession(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
-    if (
-        !user &&
-        !request.nextUrl.pathname.startsWith('/login') &&
-        !request.nextUrl.pathname.startsWith('/auth') &&
-        !request.nextUrl.pathname.startsWith('/signup')
-    ) {
-        // no user, potentially respond by redirecting the user to the login page
+    // Public paths that don't require authentication
+    const isPublicPath =
+        request.nextUrl.pathname.startsWith('/login') ||
+        request.nextUrl.pathname.startsWith('/auth') ||
+        request.nextUrl.pathname.startsWith('/signup') ||
+        request.nextUrl.pathname.startsWith('/portal/login') ||
+        request.nextUrl.pathname.startsWith('/portal/register')
+
+    if (!user && !isPublicPath) {
         const url = request.nextUrl.clone()
-        url.pathname = '/login'
+
+        // If trying to access portal but not logged in, redirect to portal login
+        if (request.nextUrl.pathname.startsWith('/portal')) {
+            url.pathname = '/portal/login'
+        } else {
+            // Otherwise redirect to main (admin) login
+            url.pathname = '/login'
+        }
+
         return NextResponse.redirect(url)
     }
 
