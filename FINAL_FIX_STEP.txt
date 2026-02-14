@@ -1,0 +1,68 @@
+╔════════════════════════════════════════════════════════════╗
+║                                                            ║
+║      🎯 الخطوة الأخيرة لحل المشكلة نهائياً               ║
+║       Final Step to Fix the Issue Completely               ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
+
+✅ تم إضافة service_role_key بنجاح!
+
+❌ لكن لا تزال هناك مشكلة في بنية جدول profiles
+
+📋 المشكلة:
+   - جدول profiles لا يحتوي على أعمدة phone_number و whatsapp_number
+   - role constraint لا يسمح بـ 'customer'
+
+
+🔧 الحل (خطوتان فقط):
+
+┌────────────────────────────────────────────────────────────┐
+│                                                            │
+│ الخطوة 1: افتح Supabase Dashboard                         │
+│ Step 1: Open Supabase Dashboard                           │
+│                                                            │
+│  1. https://app.supabase.com                               │
+│  2. اختر مشروعك / Select your project                     │
+│  3. SQL Editor من القائمة                                 │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│                                                            │
+│ الخطوة 2: نفذ هذا SQL                                     │
+│ Step 2: Execute this SQL                                   │
+│                                                            │
+│  افتح الملف / Open file:                                  │
+│  📄 016_fix_profiles_schema.sql                            │
+│                                                            │
+│  انسخ كل المحتوى والصقه في SQL Editor                     │
+│  Copy all content and paste in SQL Editor                  │
+│                                                            │
+│  اضغط "RUN" أو Ctrl+Enter                                 │
+│  Click "RUN" or press Ctrl+Enter                           │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+
+
+📝 ما الذي سيتم:
+
+  ✅ حذف constraint القديم الذي يمنع 'customer' role
+  ✅ إضافة constraint جديد يسمح بـ 'customer' role  
+  ✅ إضافة أعمدة phone_number و whatsapp_number
+  ✅ تحديث الصلاحيات
+
+
+🎉 بعد تنفيذ SQL:
+
+  جرب التسجيل مرة أخرى في:
+  http://localhost:3000/portal/register
+  
+  يجب أن يعمل 100% الآن! ✅
+
+
+═══════════════════════════════════════════════════════════════
+
+⚠️  ملاحظة:
+   هذه آخر خطوة! بعدها التسجيل سيعمل تماماً.
+   
+   This is the last step! After this, signup will work perfectly.

@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 export async function createClient() {
@@ -24,6 +25,30 @@ export async function createClient() {
                     }
                 },
             },
+        }
+    )
+}
+
+// Admin client with service role key (bypasses RLS)
+export function createAdminClient() {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!serviceRoleKey) {
+        throw new Error(
+            'SUPABASE_SERVICE_ROLE_KEY is missing! ' +
+            'Please add it to your .env.local file. ' +
+            'Check GET_SERVICE_KEY.txt for instructions.'
+        )
+    }
+
+    return createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        serviceRoleKey,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false
+            }
         }
     )
 }

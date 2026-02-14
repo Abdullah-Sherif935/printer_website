@@ -8,7 +8,7 @@ export async function GET() {
         const supabase = await createClient()
 
         // Read the migration file
-        const filePath = path.join(process.cwd(), 'supabase/migrations/012_storage_setup.sql')
+        const filePath = path.join(process.cwd(), 'supabase/migrations/013_fix_profiles_rls_v2.sql')
         const sql = await fs.readFile(filePath, 'utf8')
 
         // Execute via RPC

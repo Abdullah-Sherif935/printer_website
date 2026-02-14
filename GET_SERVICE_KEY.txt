@@ -1,0 +1,69 @@
+╔════════════════════════════════════════════════════════════╗
+║                                                            ║
+║  🔑 ضروري جداً: احصل على Service Role Key                ║
+║     CRITICAL: Get Service Role Key                         ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
+
+⚠️  المشكلة الحالية:
+   الـ SUPABASE_SERVICE_ROLE_KEY غير موجود في .env.local
+   
+   The SUPABASE_SERVICE_ROLE_KEY is missing from .env.local
+
+
+✅ الحل (خطوتان فقط):
+
+┌────────────────────────────────────────────────────────────┐
+│                                                            │
+│ الخطوة 1: احصل على المفتاح من Supabase                    │
+│ Step 1: Get the key from Supabase                          │
+│                                                            │
+│  1. افتح https://app.supabase.com                          │
+│  2. اختر مشروعك: goyyfwrilfpvefmwlsjm                      │
+│  3. Settings > API (من القائمة الجانبية)                  │
+│  4. ابحث عن "Project API keys"                            │
+│  5. انسخ مفتاح "service_role"                              │
+│     (ليس anon/public، بل service_role)                     │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│                                                            │
+│ الخطوة 2: أضف المفتاح لملف .env.local                      │
+│ Step 2: Add the key to .env.local file                     │
+│                                                            │
+│  افتح الملف: .env.local                                    │
+│  وأضف هذا السطر (مع المفتاح الحقيقي):                     │
+│                                                            │
+│  SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJI...                 │
+│                                                            │
+│  ملاحظة: المفتاح طويل جداً (حوالي 500 حرف)                │
+│  Note: The key is very long (about 500 chars)              │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+
+
+📝 مثال كامل لملف .env.local:
+
+NEXT_PUBLIC_SUPABASE_URL=https://goyyfwrilfpvefmwlsjm.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_hCviG7HlVoyqLm8i4eJiiA_IM9shjIj
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+
+🔄 الخطوة 3: أعد تشغيل الخادم
+
+   بعد إضافة المفتاح، احمد Ctrl+C في terminal  
+   ثم شغل npm run dev مرة أخرى
+
+
+═══════════════════════════════════════════════════════════════
+
+⚠️  مهم جداً:
+   - لا تشارك service_role key مع أحد
+   - لا ترفعه على GitHub
+   - احفظه في .env.local فقط
+
+   IMPORTANT:
+   - Don't share service_role key with anyone
+   - Don't upload it to GitHub
+   - Keep it in .env.local only

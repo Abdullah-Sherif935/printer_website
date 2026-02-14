@@ -10,7 +10,8 @@ import {
     Settings,
     TrendingUp,
     Printer,
-    ListTodo
+    ListTodo,
+    Star
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -65,6 +66,11 @@ const menuItems = [
         title: "المصروفات",
         url: "/expenses",
         icon: Receipt,
+    },
+    {
+        title: "التقييمات",
+        url: "/reviews",
+        icon: Star,
     },
     {
         title: "الإعدادات",

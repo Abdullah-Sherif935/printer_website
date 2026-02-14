@@ -6,7 +6,7 @@ CREATE TABLE active_orders (
     customer_phone TEXT,
     items JSONB DEFAULT '[]', -- Array of {name, quantity, details}
     notes TEXT,
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'completed'))
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'delivered'))
 );
 
 CREATE INDEX idx_active_orders_status ON active_orders(status);

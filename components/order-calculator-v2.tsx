@@ -93,10 +93,18 @@ export function OrderCalculator({ inventory, settings, customers: initialCustome
                 if (existingCustomer) {
                     setCustomerId(existingCustomer.id)
                     toast.success(`تم اختيار العميل: ${existingCustomer.name}`)
+
+                    // If existing customer has no phone but we have one from URL, prompt/notify
+                    if (!existingCustomer.phone && customerPhone) {
+                        toast.info(`تنبيه: هذا العميل ليس لديه رقم مسجل، بينما الطلب يحتوي على رقم: ${customerPhone}`)
+                        // Optionally update state to allow easy addition/update if logic permits
+                        setNewCustomerPhone(customerPhone)
+                    }
                 } else {
                     setNewCustomerName(customerName)
                     setNewCustomerPhone(customerPhone || "")
                     setIsDialogOpen(true)
+                    // Pre-fill dialog needs state update which is handled above
                     toast.info(`العميل "${customerName}" غير موجود، يرجى إضافته`)
                 }
             }

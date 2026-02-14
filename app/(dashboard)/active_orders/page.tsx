@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { getActiveOrders } from "@/app/(dashboard)/active_orders/actions"
+import { createClient } from "@/lib/supabase/server"
 import { ActiveOrderList } from "@/components/active-orders/active-order-list"
 import { Button } from "@/components/ui/button"
 import { ListTodo, Plus, History } from "lucide-react"
@@ -8,8 +8,19 @@ import Link from "next/link"
 // Force dynamic rendering to ensure fresh data
 export const dynamic = 'force-dynamic'
 
+import { getSettings } from "@/app/(dashboard)/settings/actions"
+
 export default async function ActiveOrdersPage() {
-    const orders = await getActiveOrders('pending')
+    const supabase = await createClient()
+    const settings = await getSettings()
+
+    // Fetch all active orders (pending + processing + completed)
+    // "delivered" orders go to the history/completed tab
+    const { data: orders } = await supabase
+        .from('active_orders')
+        .select('*')
+        .in('status', ['pending', 'processing', 'completed'])
+        .order('created_at', { ascending: false })
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -50,7 +61,7 @@ export default async function ActiveOrdersPage() {
                         ))}
                     </div>
                 }>
-                    <ActiveOrderList orders={orders} />
+                    <ActiveOrderList orders={orders || []} settings={settings} />
                 </Suspense>
             </div>
         </div>

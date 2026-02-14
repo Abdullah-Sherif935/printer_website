@@ -3,28 +3,110 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Check, Phone, MessageCircle, Clock, CheckCircle2 } from "lucide-react"
-import { markActiveOrderCompleted } from "@/app/(dashboard)/active_orders/actions"
+import { Check, MessageCircle, Clock, CheckCircle2, MapPin, Navigation, PlayCircle, Package, Truck } from "lucide-react"
+import { markActiveOrderCompleted, markActiveOrderProcessing, markActiveOrderDelivered } from "@/app/(dashboard)/active_orders/actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
-export function ActiveOrderList({ orders, isCompleted = false }: { orders: any[], isCompleted?: boolean }) {
-    const router = useRouter()
+import { useState } from "react"
+// ... imports
 
+import { SettingsMap } from "@/app/(dashboard)/settings/actions"
+
+export function ActiveOrderList({ orders, isCompleted = false, settings }: { orders: any[], isCompleted?: boolean, settings?: SettingsMap }) {
+    const router = useRouter()
+    const [loadingId, setLoadingId] = useState<string | null>(null)
+
+    // Helper to format message
+    const formatMessage = (template: string | undefined, customerName: string) => {
+        if (!template) return ''
+        return template.replace('{customer_name}', customerName || 'يا غالي')
+    }
+
+    // ========== Stage 1: استلام وبدء العمل ==========
+    async function handleProcessing(order: any) {
+        if (loadingId) return
+        setLoadingId(order.id)
+
+        const promise = async () => {
+            try {
+                await markActiveOrderProcessing(order.id)
+                router.refresh()
+                // Open WhatsApp
+                const phone = order.customer_phone?.replace(/^0+/, '')
+                if (phone) {
+                    // Use settings message or fallback
+                    const defaultMsg = "مرحباً {customer_name}، تم استلام طلبك وجاري العمل عليه. سنبلغك فور الانتهاء!"
+                    const message = formatMessage(settings?.whatsapp_msg_processing || defaultMsg, order.customer_name)
+
+                    window.open(`https://wa.me/20${phone}?text=${encodeURIComponent(message)}`, '_blank')
+                }
+            } finally {
+                setLoadingId(null)
+            }
+        }
+
+        toast.promise(promise(), {
+            loading: 'جاري استلام الطلب...',
+            success: 'تم الاستلام! تم إرسال إشعار للعميل.',
+            error: (err) => {
+                setLoadingId(null)
+                return 'حدث خطأ'
+            }
+        })
+    }
+
+    // ========== Stage 2: تم انهاء الطلب ==========
     async function handleComplete(order: any) {
-        toast.promise(
-            async () => {
-                await markActiveOrderCompleted(order.id) // First, mark as completed in DB
+        if (loadingId) return
+        setLoadingId(order.id)
+
+        const promise = async () => {
+            try {
+                await markActiveOrderCompleted(order.id)
+                router.refresh()
+                // Open WhatsApp
+                const phone = order.customer_phone?.replace(/^0+/, '')
+                if (phone) {
+                    // Use settings message or fallback
+                    const defaultMsg = "مرحباً {customer_name}، تم الانتهاء من طلبك. يمكنك استلامه الآن!"
+                    const message = formatMessage(settings?.whatsapp_msg_completed || defaultMsg, order.customer_name)
+
+                    window.open(`https://wa.me/20${phone}?text=${encodeURIComponent(message)}`, '_blank')
+                }
+            } finally {
+                setLoadingId(null)
+            }
+        }
+
+        toast.promise(promise(), {
+            loading: 'جاري إنهاء الطلب...',
+            success: 'تم إنهاء الطلب! تم إرسال إشعار للعميل.',
+            error: (err) => {
+                setLoadingId(null)
+                return 'حدث خطأ أثناء التحديث'
+            }
+        })
+    }
+
+    // ========== Stage 3: تم التسليم ==========
+    async function handleDelivered(order: any) {
+        if (loadingId) return
+        setLoadingId(order.id)
+
+        const promise = async () => {
+            try {
+                await markActiveOrderDelivered(order.id)
 
                 // Prepare data for POS redirection
                 const params = new URLSearchParams()
                 params.set('source', 'active_orders')
                 if (order.customer_name) params.set('customerName', order.customer_name)
-                if (order.customer_phone) params.set('customerPhone', order.customer_phone)
+                // Ensure phone is passed correctly, handling potential nulls
+                const phone = order.customer_phone || ''
+                if (phone) params.set('customerPhone', phone)
 
-                // Pass items data lightly
                 if (order.items) {
-                    // Simple transformation to minimize URL length, though not strictly necessary for local
                     const simpleItems = order.items.map((i: any) => ({
                         q: i.quantity,
                         p: i.paperCount,
@@ -35,11 +117,62 @@ export function ActiveOrderList({ orders, isCompleted = false }: { orders: any[]
 
                 router.push(`/orders/new?${params.toString()}`)
                 router.refresh()
-            }, {
-            loading: 'جاري تحديث الحالة والنقل...',
-            success: 'تم الإنجاز! جاري فتح شاشة البيع...',
-            error: 'حدث خطأ أثناء التحديث'
+            } catch (e) {
+                setLoadingId(null)
+                throw e
+            }
+            // Don't reset loadingId here to prevent clicks during navigation
+        }
+
+        toast.promise(promise(), {
+            loading: 'جاري تسليم الطلب...',
+            success: 'تم التسليم! جاري فتح شاشة البيع...',
+            error: 'حدث خطأ'
         })
+    }
+
+    // ========== Status Badge Helper ==========
+    function getStatusBadge(order: any) {
+        const status = order.status
+        if (isCompleted || status === 'delivered') {
+            return (
+                <Badge variant="outline" className="font-bold px-2 py-0.5 rounded-lg text-[10px] flex items-center gap-1 bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-700">
+                    <Package className="w-3 h-3" />
+                    تم التسليم
+                </Badge>
+            )
+        }
+        if (status === 'completed') {
+            return (
+                <Badge variant="outline" className="font-bold px-2 py-0.5 rounded-lg text-[10px] flex items-center gap-1 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800">
+                    <CheckCircle2 className="w-3 h-3" />
+                    جاهز للاستلام
+                </Badge>
+            )
+        }
+        if (status === 'processing') {
+            return (
+                <Badge variant="outline" className="font-bold px-2 py-0.5 rounded-lg text-[10px] flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800 animate-pulse">
+                    <PlayCircle className="w-3 h-3" />
+                    جاري التنفيذ
+                </Badge>
+            )
+        }
+        // pending
+        return (
+            <Badge variant="outline" className="font-bold px-2 py-0.5 rounded-lg text-[10px] flex items-center gap-1 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">
+                <Clock className="w-3 h-3" />
+                انتظار
+            </Badge>
+        )
+    }
+
+    // ========== Status Bar Color Helper ==========
+    function getStatusBarColor(order: any) {
+        if (order.status === 'delivered') return 'bg-gray-400'
+        if (order.status === 'completed') return 'bg-emerald-500'
+        if (order.status === 'processing') return 'bg-blue-500'
+        return 'bg-amber-500' // pending
     }
 
     if (!orders || orders.length === 0) {
@@ -48,7 +181,7 @@ export function ActiveOrderList({ orders, isCompleted = false }: { orders: any[]
                 <div className="w-20 h-20 bg-emerald-100/50 rounded-full flex items-center justify-center mb-4">
                     <CheckCircle2 className="w-10 h-10 text-emerald-600/50" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-800">لا توجد طلبات معلقة</h3>
+                <h3 className="text-xl font-bold text-gray-800">لا توجد طلبات</h3>
                 <p className="text-gray-500 mt-2 text-sm">أنت رائع! تم إنجاز العمل كله.</p>
             </div>
         )
@@ -58,7 +191,7 @@ export function ActiveOrderList({ orders, isCompleted = false }: { orders: any[]
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {orders.map((order) => (
                 <Card key={order.id} className="relative group overflow-hidden border-2 border-transparent hover:border-emerald-500/20 transition-all duration-300 shadow-sm hover:shadow-lg bg-white dark:bg-zinc-900 rounded-2xl">
-                    <div className={`absolute top-0 left-0 w-1 h-full rounded-l-md ${isCompleted ? "bg-gray-300 dark:bg-zinc-700" : "bg-emerald-500"}`} />
+                    <div className={`absolute top-0 left-0 w-1 h-full rounded-l-md ${getStatusBarColor(order)}`} />
 
                     <CardHeader className="pb-3 pt-5 px-5 flex flex-row justify-between items-start gap-2">
                         <div>
@@ -75,25 +208,20 @@ export function ActiveOrderList({ orders, isCompleted = false }: { orders: any[]
                                 {order.customer_phone}
                             </a>
                         </div>
-                        <Badge variant="outline" className={`font-bold px-2 py-0.5 rounded-lg text-[10px] flex items-center gap-1 ${isCompleted || order.status === 'completed'
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
-                                : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
-                            }`}>
-                            {isCompleted || order.status === 'completed' ? (
-                                <>
-                                    <CheckCircle2 className="w-3 h-3" />
-                                    مكتمل
-                                </>
-                            ) : (
-                                <>
-                                    <Clock className="w-3 h-3" />
-                                    انتظار
-                                </>
-                            )}
-                        </Badge>
+                        {getStatusBadge(order)}
                     </CardHeader>
 
                     <CardContent className="px-5 pb-4">
+                        {/* Order Source Badge */}
+                        {order.order_source === 'online' && (
+                            <div className="mb-3">
+                                <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200 gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    طلب أونلاين
+                                </Badge>
+                            </div>
+                        )}
+
                         <div className="space-y-2 mb-4">
                             {order.items && Array.isArray(order.items) && order.items.map((item: any, idx: number) => (
                                 <div key={idx} className="flex justify-between items-center text-sm py-1.5 border-b border-gray-100 dark:border-zinc-800 last:border-0">
@@ -112,25 +240,156 @@ export function ActiveOrderList({ orders, isCompleted = false }: { orders: any[]
                             ))}
                         </div>
 
+                        {/* Attached Files */}
+                        {order.file_urls && Array.isArray(order.file_urls) && order.file_urls.length > 0 && (
+                            <div className="mb-4 space-y-2 bg-slate-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-slate-100 dark:border-zinc-700">
+                                <span className="text-xs font-bold text-slate-500 block">الملفات المرفقة:</span>
+                                {order.file_urls.map((url: string, i: number) => (
+                                    <a
+                                        key={i}
+                                        href={url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline truncate"
+                                    >
+                                        <CheckCircle2 className="w-4 h-4 text-slate-400" />
+                                        <span className="truncate" dir="ltr">File {i + 1}</span>
+                                    </a>
+                                ))}
+                            </div>
+                        )}
+
                         {order.notes && (
                             <div className="bg-amber-50/50 dark:bg-amber-900/10 p-3 rounded-xl border border-amber-100 dark:border-amber-800/30 text-xs text-amber-800/80 dark:text-amber-400 italic leading-relaxed">
                                 <span className="font-bold text-amber-700 dark:text-amber-500 not-italic block mb-1">ملاحظة:</span>
-                                {order.notes}
+                                {order.notes.split('\n').map((line: string, i: number) => {
+                                    const mapLinkMatch = line.match(/(https:\/\/maps\.google\.com\/\?q=[^ ]+)/);
+                                    if (mapLinkMatch) {
+                                        return (
+                                            <Button
+                                                key={i}
+                                                asChild
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-full mt-2 h-8 text-xs border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-400 gap-2 not-italic"
+                                            >
+                                                <a
+                                                    href={mapLinkMatch[1]}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <MapPin className="w-3 h-3" />
+                                                    فتح الموقع على الخريطة
+                                                </a>
+                                            </Button>
+                                        )
+                                    }
+                                    return <span key={i} className="block">{line}</span>
+                                })}
+                            </div>
+                        )}
+
+                        {/* Delivery Info */}
+                        {order.delivery_method === 'delivery' && (
+                            <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 rounded-xl space-y-2">
+                                <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                                    <MapPin className="w-4 h-4" />
+                                    <span className="text-xs font-bold">طلب توصيل للعنوان:</span>
+                                </div>
+                                <p className="text-xs text-purple-600 dark:text-purple-400 leading-relaxed">
+                                    {order.delivery_address || 'لم يتم تحديد عنوان نصي'}
+                                </p>
+                                {order.delivery_lat && order.delivery_lng && (
+                                    <Button
+                                        asChild
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full mt-2 h-9 text-xs border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-400 gap-2"
+                                    >
+                                        <a
+                                            href={`https://www.google.com/maps?q=${order.delivery_lat},${order.delivery_lng}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <Navigation className="w-3 h-3" />
+                                            فتح في خرائط Google
+                                        </a>
+                                    </Button>
+                                )}
                             </div>
                         )}
                     </CardContent>
 
-                    {!isCompleted && (
-                        <CardFooter className="px-5 pt-0 pb-5">
-                            <Button
-                                onClick={() => handleComplete(order)}
-                                className="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold hover:bg-emerald-600 dark:hover:bg-emerald-500 transition-all active:scale-95 shadow-lg shadow-slate-200/50 dark:shadow-none h-11 rounded-xl"
-                            >
-                                <Check className="w-5 h-5 ml-2" />
-                                تم الإنجاز
-                            </Button>
-                        </CardFooter>
-                    )}
+                    <CardFooter className="px-5 pt-0 pb-5 gap-2 flex-col">
+                        {/* ===== Pending: Show "استلام وبدء" ===== */}
+                        {order.status === 'pending' && (
+                            <div className="flex flex-col gap-2 w-full">
+                                <div className="flex gap-2 w-full">
+                                    <Button
+                                        onClick={() => handleProcessing(order)}
+                                        disabled={loadingId === order.id}
+                                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-10 font-bold rounded-xl gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <PlayCircle className="w-4 h-4" />
+                                        {loadingId === order.id ? 'جاري...' : 'استلام وبدء'}
+                                    </Button>
+                                    <a
+                                        href={`https://wa.me/20${order.customer_phone?.replace(/^0+/, '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 hover:bg-emerald-200 transition-colors border border-emerald-200"
+                                        title="إرسال واتساب"
+                                    >
+                                        <MessageCircle className="w-5 h-5" />
+                                    </a>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ===== Processing: Show "تم انهاء الطلب" + "تم التسليم" ===== */}
+                        {order.status === 'processing' && (
+                            <div className="flex flex-col gap-2 w-full">
+                                <Button
+                                    onClick={() => handleComplete(order)}
+                                    disabled={loadingId === order.id}
+                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 rounded-xl gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Check className="w-5 h-5" />
+                                    {loadingId === order.id ? 'جاري...' : 'تم انهاء الطلب'}
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* ===== Completed: Show "تم التسليم" ===== */}
+                        {order.status === 'completed' && (
+                            <div className="flex flex-col gap-2 w-full">
+                                <Button
+                                    onClick={() => handleDelivered(order)}
+                                    disabled={loadingId === order.id}
+                                    className="w-full bg-slate-800 hover:bg-slate-900 dark:bg-purple-600 dark:hover:bg-purple-700 text-white font-bold h-11 rounded-xl gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Truck className="w-5 h-5" />
+                                    {loadingId === order.id ? 'جاري...' : 'تم التسليم للعميل'}
+                                </Button>
+                                <a
+                                    href={`https://wa.me/20${order.customer_phone?.replace(/^0+/, '')}?text=${encodeURIComponent(formatMessage(settings?.whatsapp_msg_completed || "مرحباً {customer_name}، تم الانتهاء من طلبك. يمكنك استلامه الآن!", order.customer_name))}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-full h-9 flex items-center justify-center gap-2 rounded-xl bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors border border-emerald-200 font-bold text-sm"
+                                >
+                                    <MessageCircle className="w-4 h-4" />
+                                    إبلاغ العميل (واتساب)
+                                </a>
+                            </div>
+                        )}
+
+                        {/* ===== Delivered: Done ===== */}
+                        {order.status === 'delivered' && (
+                            <div className="w-full text-center py-2">
+                                <span className="text-sm text-gray-500 italic">✅ تم تسليم هذا الطلب</span>
+                            </div>
+                        )}
+                    </CardFooter>
                 </Card>
             ))}
         </div>

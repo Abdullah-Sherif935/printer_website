@@ -125,3 +125,92 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Global Body Styles (Light Mode Default) */
+body {
+  /* Light Mode Background */
+  background-color: oklch(1 0 0);
+  /* White */
+  /* Dotted Pattern for Light Mode (Subtle Gray) */
+  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+  background-size: 24px 24px;
+  position: relative;
+}
+
+/* Dark Mode Overrides */
+.dark body {
+  /* Deep Navy Blue Background */
+  background-color: #070B1F;
+  /* Dark Mode Dotted Pattern */
+  background-image: radial-gradient(#1e293b 1px, transparent 1px);
+}
+
+/* Logo Watermark (Applied to BOTH Light and Dark) */
+body::before {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60vw;
+  max-width: 700px;
+  height: 60vh;
+  max-height: 700px;
+  background-image: url('/logo_stencil.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  pointer-events: none;
+  z-index: 0;
+
+  /* Light Mode Logic:
+     1. Invert image (White Text on Black BG -> Black Text on White BG)
+     2. Multiply blend mode makes White Transparent, keeps Black Text
+  */
+  filter: invert(1);
+  mix-blend-mode: multiply;
+  opacity: 0.05;
+}
+
+/* Dark Mode Overrides for Watermark */
+.dark body::before {
+  /* Dark Mode Logic:
+     1. Original Image (White Text on Black BG)
+     2. Screen blend mode makes Black Transparent, keeps White Text
+  */
+  filter: none;
+  mix-blend-mode: screen;
+  opacity: 0.08;
+}
+
+/* Loading Animations */
+@keyframes logo-reveal {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0.5;
+    filter: blur(5px);
+  }
+
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes shimmer-glow {
+  0% {
+    opacity: 0.8;
+    filter: brightness(1) drop-shadow(0 0 0px rgba(59, 130, 246, 0));
+  }
+
+  50% {
+    opacity: 1;
+    filter: brightness(1.2) drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
+  }
+
+  100% {
+    opacity: 0.8;
+    filter: brightness(1) drop-shadow(0 0 0px rgba(59, 130, 246, 0));
+  }
+}
