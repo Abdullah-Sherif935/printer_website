@@ -100,7 +100,13 @@ export async function signup(formData: FormData) {
 
     } catch (e: any) {
         console.error('Signup exception:', e)
-        return { error: 'حدث خطأ غير متوقع أثناء التسجيل.' }
+
+        // Check for specific missing key error
+        if (e.message && e.message.includes('SUPABASE_SERVICE_ROLE_KEY')) {
+            return { error: 'خطأ في إعدادات النظام: مفتاح الصلاحيات (SERVICE_ROLE_KEY) مفقود في Vercel.' }
+        }
+
+        return { error: 'حدث خطأ غير متوقع أثناء التسجيل.' + (process.env.NODE_ENV === 'development' ? ` (${e.message})` : '') }
     }
 
     revalidatePath('/', 'layout')
