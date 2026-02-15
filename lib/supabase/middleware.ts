@@ -45,8 +45,10 @@ export async function updateSession(request: NextRequest) {
         const url = request.nextUrl.clone()
 
         // If trying to access portal but not logged in, redirect to portal register (default landing)
+        // If trying to access portal but not logged in
         if (request.nextUrl.pathname.startsWith('/clients')) {
-            url.pathname = '/clients/register'
+            // Redirect to client login page
+            url.pathname = '/clients/login'
         } else {
             // Otherwise redirect to main (admin) login
             url.pathname = '/login'
