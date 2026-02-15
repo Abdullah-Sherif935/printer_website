@@ -72,6 +72,7 @@ type PrintItem = {
     rangeType?: "all" | "custom";
     fromPage?: number;
     toPage?: number;
+    originalPageCount?: number;
 };
 
 type OrderItem = NotebookItem | PrintItem;
@@ -960,6 +961,11 @@ export function PortalOrderForm({
                                                                                     "pageCount",
                                                                                     numPages,
                                                                                 );
+                                                                                updateItem(
+                                                                                    index,
+                                                                                    "originalPageCount",
+                                                                                    numPages,
+                                                                                );
                                                                                 toast.success(
                                                                                     `تم التعرف على ${numPages} صفحة تلقائياً`,
                                                                                 );
@@ -991,6 +997,13 @@ export function PortalOrderForm({
                                                                 if (val === "all") {
                                                                     updateItem(index, "fromPage", undefined);
                                                                     updateItem(index, "toPage", undefined);
+                                                                    if ((item as PrintItem).originalPageCount) {
+                                                                        updateItem(
+                                                                            index,
+                                                                            "pageCount",
+                                                                            (item as PrintItem).originalPageCount!
+                                                                        );
+                                                                    }
                                                                 } else {
                                                                     updateItem(index, "fromPage", 1);
                                                                     updateItem(index, "toPage", 1);
