@@ -1011,10 +1011,10 @@ export function PortalOrderForm({
                                                                 }
                                                             }}
                                                         >
-                                                            <SelectTrigger className="font-bold text-base h-10 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 border text-right w-full focus:ring-blue-600">
+                                                            <SelectTrigger className="font-bold text-base h-10 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 border text-right w-full focus:ring-blue-600" dir="rtl">
                                                                 <SelectValue />
                                                             </SelectTrigger>
-                                                            <SelectContent>
+                                                            <SelectContent dir="rtl" align="end">
                                                                 <SelectItem
                                                                     value="all"
                                                                     className="font-bold text-base"
