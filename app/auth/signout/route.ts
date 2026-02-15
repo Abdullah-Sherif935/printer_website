@@ -13,7 +13,14 @@ export async function POST(request: Request) {
     }
 
     revalidatePath('/', 'layout')
-    redirect('/login')
+
+    // Check referer to determine redirect target
+    const referer = request.headers.get('referer')
+    if (referer && referer.includes('/clients')) {
+        redirect('/clients/login')
+    } else {
+        redirect('/login')
+    }
 }
 
 // Handle GET requests as well, just in case a regular link is used
@@ -28,5 +35,12 @@ export async function GET(request: Request) {
     }
 
     revalidatePath('/', 'layout')
-    redirect('/login')
+
+    // Check referer to determine redirect target
+    const referer = request.headers.get('referer')
+    if (referer && referer.includes('/clients')) {
+        redirect('/clients/login')
+    } else {
+        redirect('/login')
+    }
 }

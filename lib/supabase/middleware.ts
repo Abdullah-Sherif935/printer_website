@@ -38,15 +38,15 @@ export async function updateSession(request: NextRequest) {
         request.nextUrl.pathname.startsWith('/login') ||
         request.nextUrl.pathname.startsWith('/auth') ||
         request.nextUrl.pathname.startsWith('/signup') ||
-        request.nextUrl.pathname.startsWith('/portal/login') ||
-        request.nextUrl.pathname.startsWith('/portal/register')
+        request.nextUrl.pathname.startsWith('/clients/login') ||
+        request.nextUrl.pathname.startsWith('/clients/register')
 
     if (!user && !isPublicPath) {
         const url = request.nextUrl.clone()
 
-        // If trying to access portal but not logged in, redirect to portal login
-        if (request.nextUrl.pathname.startsWith('/portal')) {
-            url.pathname = '/portal/login'
+        // If trying to access portal but not logged in, redirect to portal register (default landing)
+        if (request.nextUrl.pathname.startsWith('/clients')) {
+            url.pathname = '/clients/register'
         } else {
             // Otherwise redirect to main (admin) login
             url.pathname = '/login'

@@ -106,7 +106,7 @@ export async function markActiveOrderProcessing(id: string) {
     }
 
     revalidatePath('/active_orders')
-    revalidatePath('/portal')
+    revalidatePath('/clients')
     return { success: true }
 }
 
@@ -150,7 +150,7 @@ export async function markActiveOrderCompleted(id: string) {
     }
 
     revalidatePath('/active_orders')
-    revalidatePath('/portal')
+    revalidatePath('/clients')
     return { success: true }
 }
 
@@ -175,9 +175,39 @@ export async function markActiveOrderDelivered(id: string) {
     // Send notification to customer
     const { data: order } = await supabase
         .from('active_orders')
-        .select('user_id, customer_name')
+        .select('user_id, customer_name, file_urls')
         .eq('id', id)
         .single()
+
+    // Delete files from storage upon delivery to save space and privacy
+    if (order && order.file_urls && Array.isArray(order.file_urls)) {
+        for (const url of order.file_urls) {
+            try {
+                // Determine the path to delete. 
+                // If full URL: .../storage/v1/object/public/orders/path/to/file
+                // We need: path/to/file
+                let path = url;
+                if (url.includes('/orders/')) {
+                    path = url.split('/orders/')[1];
+                }
+
+                if (path) {
+                    // Remove URL decoding if present
+                    path = decodeURIComponent(path);
+                    console.log(`[Auto-Delete] Attempting to delete file: ${path}`);
+                    const { error: delError } = await supabase.storage.from('orders').remove([path]);
+                    if (delError) {
+                        console.error(`[Auto-Delete] Error deleting file ${path}:`, delError);
+                    } else {
+                        console.log(`[Auto-Delete] Successfully deleted file: ${path}`);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to auto-delete file:', url, err);
+                // Continue even if deletion fails
+            }
+        }
+    }
 
     if (order && order.user_id) {
         const settings = await getSettings()
@@ -194,6 +224,6 @@ export async function markActiveOrderDelivered(id: string) {
     }
 
     revalidatePath('/active_orders')
-    revalidatePath('/portal')
+    revalidatePath('/clients')
     return { success: true }
 }

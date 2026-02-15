@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { SplashScreen } from '@/components/splash-screen'
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner"
+import { InstallPrompt } from "@/components/pwa/install-prompt"
 import "leaflet/dist/leaflet.css";
 
 const geistSans = Geist({
@@ -18,6 +19,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "المهندس للطباعة - نظام الإدارة",
   description: "نظام شامل لإدارة المطابع والمكتبات",
+  manifest: "/manifest.json",
   icons: {
     icon: "/logo.png",
     shortcut: "/logo.png",
@@ -34,9 +36,11 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        suppressHydrationWarning
       >
         <SplashScreen />
         {children}
+        <InstallPrompt />
         <Toaster />
       </body>
     </html>

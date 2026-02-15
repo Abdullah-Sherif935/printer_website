@@ -1,4 +1,4 @@
-import { getReviews } from '@/app/portal/profile/actions'
+import { getReviews } from '@/app/clients/profile/actions'
 import { AdminReviewCard } from '@/components/admin/admin-review-card'
 import { Card, CardContent } from '@/components/ui/card'
 import { Star, MessageSquare } from 'lucide-react'

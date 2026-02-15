@@ -44,7 +44,7 @@ export default async function DashboardLayout({
         // 5. Redirect Customers to Portal
         // This is crucial for security
         if (profile?.role === "customer") {
-            redirect("/portal")
+            redirect("/clients")
         }
 
     } catch (error) {

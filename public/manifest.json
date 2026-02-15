@@ -1,0 +1,22 @@
+{
+    "name": "المهندس للطباعة",
+    "short_name": "المهندس",
+    "description": "تطبيق المهندس لخدمات الطباعة وتصميم الملفات",
+    "start_url": "/clients",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#020817",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/logo.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/logo.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

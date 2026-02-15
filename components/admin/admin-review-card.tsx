@@ -6,7 +6,7 @@ import { Star, Trash2, Loader2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ar } from 'date-fns/locale'
 import { useState } from 'react'
-import { deleteReview } from '@/app/portal/profile/actions'
+import { deleteReview } from '@/app/clients/profile/actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import {

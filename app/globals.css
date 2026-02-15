@@ -169,7 +169,7 @@ body::before {
   */
   filter: invert(1);
   mix-blend-mode: multiply;
-  opacity: 0.05;
+  opacity: 0.03;
 }
 
 /* Dark Mode Overrides for Watermark */
@@ -180,7 +180,7 @@ body::before {
   */
   filter: none;
   mix-blend-mode: screen;
-  opacity: 0.08;
+  opacity: 0.04;
 }
 
 /* Loading Animations */
