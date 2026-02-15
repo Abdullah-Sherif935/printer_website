@@ -988,7 +988,7 @@ export function PortalOrderForm({
                                                 <div className="col-span-2 md:col-span-12 grid grid-cols-1 md:grid-cols-12 gap-4 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
                                                     <div className="col-span-1 md:col-span-4 space-y-1.5">
                                                         <Label className="text-base font-bold text-slate-700 dark:text-slate-200">
-                                                            نطاق الطباعة
+                                                            نظام الطباعه
                                                         </Label>
                                                         <Select
                                                             value={item.rangeType || "all"}
@@ -1019,7 +1019,7 @@ export function PortalOrderForm({
                                                                     value="all"
                                                                     className="font-bold text-base"
                                                                 >
-                                                                    كامل الملف
+                                                                    الملف كامل
                                                                 </SelectItem>
                                                                 <SelectItem
                                                                     value="custom"
