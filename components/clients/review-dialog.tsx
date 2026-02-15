@@ -17,8 +17,28 @@ import { createReview } from '@/app/clients/profile/actions'
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
-export function ReviewDialog() {
-    const [open, setOpen] = useState(false)
+export function ReviewDialog({
+    orderId,
+    open: controlledOpen,
+    onOpenChange: setControlledOpen
+}: {
+    orderId?: string
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
+}) {
+    const [internalOpen, setInternalOpen] = useState(false)
+    const isControlled = controlledOpen !== undefined
+    const open = isControlled ? controlledOpen : internalOpen
+
+    // Wrapper for setting open state
+    const setOpen = (newOpen: boolean) => {
+        if (isControlled) {
+            setControlledOpen?.(newOpen)
+        } else {
+            setInternalOpen(newOpen)
+        }
+    }
+
     const [loading, setLoading] = useState(false)
     const [rating, setRating] = useState(0)
     const [hoverRating, setHoverRating] = useState<number | null>(null)
@@ -34,11 +54,11 @@ export function ReviewDialog() {
         }
 
         setLoading(true)
-        const formData = new FormData()
-        formData.append('rating', rating.toString())
-        formData.append('comment', comment)
-
-        const result = await createReview(formData)
+        const result = await createReview({
+            order_id: orderId,
+            rating,
+            comment
+        })
 
         if (result?.error) {
             toast.error(result?.error)
@@ -54,12 +74,14 @@ export function ReviewDialog() {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 transition-all hover:-translate-y-0.5">
-                    <Plus className="w-4 h-4" />
-                    <span>أضف تقييمك</span>
-                </Button>
-            </DialogTrigger>
+            {!isControlled && (
+                <DialogTrigger asChild>
+                    <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 transition-all hover:-translate-y-0.5">
+                        <Plus className="w-4 h-4" />
+                        <span>أضف تقييمك</span>
+                    </Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle className="text-center">إضافة تقييم جديد</DialogTitle>
@@ -81,8 +103,8 @@ export function ReviewDialog() {
                                 >
                                     <Star
                                         className={`h-8 w-8 transition-colors ${star <= (hoverRating ?? rating)
-                                                ? "fill-amber-400 text-amber-400"
-                                                : "fill-transparent text-gray-300 dark:text-gray-600"
+                                            ? "fill-amber-400 text-amber-400"
+                                            : "fill-transparent text-gray-300 dark:text-gray-600"
                                             }`}
                                     />
                                 </button>

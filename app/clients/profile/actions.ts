@@ -81,7 +81,7 @@ export async function getProfile() {
 // ============================================
 
 export async function createReview(data: {
-    order_id: string
+    order_id?: string
     rating: number
     comment?: string
 }) {
@@ -90,26 +90,28 @@ export async function createReview(data: {
 
     if (!user) return { error: 'Unauthorized' }
 
-    // Verify order belongs to user and is delivered
-    const { data: order } = await supabase
-        .from('active_orders')
-        .select('status, user_id')
-        .eq('id', data.order_id)
-        .single()
+    // If order_id is provided, verify it belongs to user and is delivered
+    if (data.order_id) {
+        const { data: order } = await supabase
+            .from('active_orders')
+            .select('status, user_id')
+            .eq('id', data.order_id)
+            .single()
 
-    if (!order || order.user_id !== user.id) {
-        return { error: 'طلب غير موجود' }
-    }
+        if (!order || order.user_id !== user.id) {
+            return { error: 'طلب غير موجود' }
+        }
 
-    if (order.status !== 'delivered') {
-        return { error: 'يمكنك التقييم فقط بعد استلام الطلب' }
+        if (order.status !== 'delivered') {
+            return { error: 'يمكنك التقييم فقط بعد استلام الطلب' }
+        }
     }
 
     const { error } = await supabase
         .from('reviews')
         .insert({
             user_id: user.id,
-            order_id: data.order_id,
+            order_id: data.order_id || null,
             rating: data.rating,
             comment: data.comment
         })
