@@ -848,7 +848,7 @@ export function PortalOrderForm({
                                                 </div>
 
                                                 {/* Quantity & Paper Count */}
-                                                <div className="col-span-6 sm:col-span-3 space-y-2">
+                                                <div className="col-span-4 sm:col-span-3 space-y-2">
                                                     <Label className="text-base font-bold">الكمية</Label>
                                                     <Input
                                                         type="number"
@@ -864,7 +864,7 @@ export function PortalOrderForm({
                                                         className="text-center text-lg font-bold border-2 focus-visible:ring-emerald-500 h-10"
                                                     />
                                                 </div>
-                                                <div className="col-span-6 sm:col-span-3 space-y-2">
+                                                <div className="col-span-8 sm:col-span-3 space-y-2">
                                                     <Label className="text-base font-bold">
                                                         الورق الصافي للتحضير
                                                     </Label>
