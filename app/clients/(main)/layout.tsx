@@ -12,6 +12,8 @@ import { NotificationBell } from "@/components/clients/notification-bell"
 import { ClientSidebar } from '@/components/clients/client-sidebar'
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { FloatingContactButtons } from '@/components/floating-contact-buttons'
+
 
 export default function PortalMainLayout({
     children,
@@ -150,6 +152,7 @@ export default function PortalMainLayout({
                         &copy; {new Date().getFullYear()} المهندس للطباعة - جميع الحقوق محفوظة
                     </footer>
                 </div>
+                <FloatingContactButtons isSidebarOpen={sidebarOpen} />
             </div>
         </ThemeProvider>
     )

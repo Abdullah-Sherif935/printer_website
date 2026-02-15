@@ -18,6 +18,8 @@ export type SettingsMap = {
     notification_msg_processing?: string
     notification_msg_completed?: string
     notification_msg_delivered?: string
+    whatsapp_number?: string
+    contact_phone?: string
 }
 
 export async function getSettings() {
@@ -40,6 +42,8 @@ export async function getSettings() {
         notification_msg_processing: "مرحباً {customer_name}، تم استلام طلبك وجاري العمل عليه حالياً. سنقوم بإبلاغك فور الانتهاء منه.",
         notification_msg_completed: "مرحباً {customer_name}، تم الانتهاء من طلبك بنجاح! يمكنك استلامه الآن.",
         notification_msg_delivered: "مرحباً {customer_name}، تم تسليم طلبك بنجاح. شكراً لثقتكم بنا! نتمنى أن تكون الخدمة قد نالت رضاكم.",
+        whatsapp_number: "01030360804",
+        contact_phone: "01030360804",
     }
 
     if (error || !data) {
@@ -51,7 +55,8 @@ export async function getSettings() {
     data.forEach((row) => {
         // Check if value is a number-like string for numeric fields
         // For text fields (starting with whatsapp_ or notification_), keep as string
-        if (row.key.startsWith('whatsapp_') || row.key.startsWith('notification_')) {
+        // For text fields (starting with whatsapp_ or notification_ or contact_), keep as string
+        if (row.key.startsWith('whatsapp_') || row.key.startsWith('notification_') || row.key === 'contact_phone') {
             settings[row.key] = row.value
         } else {
             settings[row.key] = parseFloat(row.value)
@@ -84,6 +89,9 @@ export async function updateSettings(settings: SettingsMap) {
         { key: 'notification_msg_processing', value: settings.notification_msg_processing || '' },
         { key: 'notification_msg_completed', value: settings.notification_msg_completed || '' },
         { key: 'notification_msg_delivered', value: settings.notification_msg_delivered || '' },
+
+        { key: 'whatsapp_number', value: settings.whatsapp_number || '' },
+        { key: 'contact_phone', value: settings.contact_phone || '' },
     ]
 
     for (const update of updates) {

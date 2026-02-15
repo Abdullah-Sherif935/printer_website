@@ -24,7 +24,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: SettingsMap
     }
 
     const handleChange = (key: keyof SettingsMap, value: string) => {
-        if (key.startsWith('whatsapp_') || key.startsWith('notification_')) {
+        if (key.startsWith('whatsapp_') || key.startsWith('notification_') || key === 'contact_phone') {
             setSettings(prev => ({ ...prev, [key]: value }))
         } else {
             setSettings(prev => ({ ...prev, [key]: value === "" ? undefined : parseFloat(value) }))
@@ -33,6 +33,37 @@ export function SettingsForm({ initialSettings }: { initialSettings: SettingsMap
 
     return (
         <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>أرقام التواصل</CardTitle>
+                    <CardDescription>
+                        حدد أرقام التواصل التي تظهر في الأزرار العائمة للعملاء.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>رقم الواتساب</Label>
+                            <Input
+                                value={settings.whatsapp_number || ''}
+                                onChange={(e) => handleChange('whatsapp_number', e.target.value)}
+                                dir="ltr"
+                                placeholder="مثلاً: 01030360804"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>رقم الإتصال الهاتفي</Label>
+                            <Input
+                                value={settings.contact_phone || ''}
+                                onChange={(e) => handleChange('contact_phone', e.target.value)}
+                                dir="ltr"
+                                placeholder="مثلاً: 01030360804"
+                            />
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle>رسائل الواتساب التلقائية</CardTitle>
