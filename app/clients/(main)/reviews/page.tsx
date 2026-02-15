@@ -1,14 +1,23 @@
-import { getReviews } from '@/app/clients/profile/actions'
+import { getReviews, getCurrentUserRole } from '@/app/clients/profile/actions'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Star, MessageSquare } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ar } from 'date-fns/locale'
 import { ReviewDialog } from '@/components/clients/review-dialog'
+import { createClient } from '@/lib/supabase/server'
+import { DeleteReviewButton } from '@/components/clients/delete-review-button'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ReviewsPage() {
     const reviews = await getReviews() || []
+
+    // Get current user and role
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    const role = user ? await getCurrentUserRole() : null
+    const isAdmin = role === 'admin'
+    const userId = user?.id
 
     const avgRating = reviews.length > 0
         ? (reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length).toFixed(1)
@@ -49,7 +58,7 @@ export default async function ReviewsPage() {
             ) : (
                 <div className="grid gap-4 md:grid-cols-2">
                     {reviews.map((review: any) => (
-                        <Card key={review.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                        <Card key={review.id} className="overflow-hidden hover:shadow-md transition-shadow relative group">
                             <CardHeader className="pb-3">
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -57,22 +66,31 @@ export default async function ReviewsPage() {
                                             {review.profiles?.full_name?.charAt(0) || 'ع'}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-bold text-sm truncate">{review.profiles?.full_name || 'عميل'}</p>
+                                            <p className="font-bold text-sm truncate">
+                                                {review.profiles?.full_name || 'عميل'}
+                                            </p>
                                             <p className="text-xs text-muted-foreground">
                                                 {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: ar })}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-1 shrink-0 bg-amber-50 dark:bg-amber-950/30 px-2 py-1 rounded-full border border-amber-100 dark:border-amber-900/50">
-                                        {[...Array(5)].map((_, i) => (
-                                            <Star
-                                                key={i}
-                                                className={`w-3.5 h-3.5 ${i < review.rating
-                                                    ? 'fill-amber-400 text-amber-400'
-                                                    : 'fill-gray-200 text-gray-200 dark:fill-gray-800 dark:text-gray-800'
-                                                    }`}
-                                            />
-                                        ))}
+                                    <div className="flex flex-col items-end gap-2">
+                                        <div className="flex items-center gap-1 shrink-0 bg-amber-50 dark:bg-amber-950/30 px-2 py-1 rounded-full border border-amber-100 dark:border-amber-900/50">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star
+                                                    key={i}
+                                                    className={`w-3.5 h-3.5 ${i < review.rating
+                                                        ? 'fill-amber-400 text-amber-400'
+                                                        : 'fill-gray-200 text-gray-200 dark:fill-gray-800 dark:text-gray-800'
+                                                        }`}
+                                                />
+                                            ))}
+                                        </div>
+                                        {(isAdmin || userId === review.user_id) && (
+                                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <DeleteReviewButton reviewId={review.id} />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </CardHeader>

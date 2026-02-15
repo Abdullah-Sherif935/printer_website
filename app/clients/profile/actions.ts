@@ -124,23 +124,76 @@ export async function createReview(data: {
         return { error: 'فشل إضافة التقييم' }
     }
 
+    // Notify Admins
+    const { data: admins } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('role', 'admin')
+
+    if (admins && admins.length > 0) {
+        const notifications = admins.map(admin => ({
+            user_id: admin.id,
+            title: '⭐ تقييم جديد',
+            message: `تم إضافة تقييم جديد من قبل عميل.`, // Simple message since we don't have name handy easily without fetch
+            is_read: false
+        }))
+
+        await supabase.from('notifications').insert(notifications)
+    }
+
     revalidatePath('/clients/orders')
+    revalidatePath('/clients/reviews')
     revalidatePath('/')
     return { success: true }
+}
+
+export async function getCurrentUserRole() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+    return profile?.role
 }
 
 export async function getReviews() {
     const supabase = await createClient()
 
-    const { data: reviews } = await supabase
+    // 1. Fetch reviews
+    const { data: reviews, error } = await supabase
         .from('reviews')
-        .select(`
-            *,
-            profiles!inner(full_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
 
-    return reviews || []
+    if (error) {
+        console.error('Error fetching reviews:', error)
+        return []
+    }
+
+    if (!reviews || reviews.length === 0) return []
+
+    // 2. Fetch profiles for these reviews
+    const userIds = Array.from(new Set(reviews.map(r => r.user_id)))
+
+    const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', userIds)
+
+    // 3. Map profiles to reviews
+    const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])
+
+    const enrichedReviews = reviews.map(review => ({
+        ...review,
+        profiles: profilesMap.get(review.user_id) || { full_name: 'مستخدم' }
+    }))
+
+    return enrichedReviews
 }
 
 export async function deleteReview(reviewId: string) {
