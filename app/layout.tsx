@@ -21,9 +21,9 @@ export const metadata: Metadata = {
   description: "نظام شامل لإدارة المطابع والمكتبات",
   manifest: "/manifest.json",
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    icon: "/icon-192.png",
+    shortcut: "/icon-192.png",
+    apple: "/icon-192.png",
   },
 };
 
